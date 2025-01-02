@@ -1,0 +1,127 @@
+{% extends 'mechanic/index.html' %}
+
+{% block content %}
+<div style="background-color: #294FA2; height: 110px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+    <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">AUTO PARTS ITEM REQUEST</h1>
+    <div style="display: flex; position: absolute; bottom: 10px; right: 20px;">
+        <!-- Search bar -->
+        <form method="GET" action="{% url 'mechanic:view_req' %}">
+            <input 
+                type="text" 
+                name="search" 
+                placeholder="Search..." 
+                style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; width: 250px; height: 40px;" 
+                value="{{ search_query }}"
+            >
+            
+            <!-- Category filter dropdown -->
+            <select name="category" style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; height: 40px; margin-left: 10px;">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.mat_category_id }}" {% if category.mat_category_id|stringformat:"s" == selected_category %}selected{% endif %}>
+                        {{ category.mat_name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" style="padding: 8px 15px; border-radius: 7px; background-color: #4CAF50; color: white; border: none; height: 40px; margin-left: 10px;">
+                Filter
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Table for materials -->
+<div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
+                <th>Item Req No.</th>
+                <th>Bus Unit No.</th>
+                <th>Approved By</th>
+                <th>View Details</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in unique_item_requests %}
+            <tr style="font-family: 'Istok Web', sans-serif; font-size: 18px;">
+                <td>{{ group.item_req_num.item_req_num }}</td>
+                <td>{{ group.item_req_num.bus_unit_num.bus_unit_num }}</td>
+                <td>{{ group.item_req_num.item_req_approved_by.emp_fname }} {{ group.item_req_num.item_req_approved_by.emp_lname }}</td>
+                <td>
+                    <button 
+                        class="btn btn-primary view-button" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#viewModal"
+                        data-requests='{{ group.requests|safe }}'
+                    >
+                        View
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center;">No Auto Parts Item Requests Available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% comment %} 
+<!-- Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel">Item Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
+                            <th>Material Name</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-body"></tbody> <!-- Populated dynamically -->
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> {% endcomment %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const viewButtons = document.querySelectorAll('.view-button');
+
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const modalBody = document.getElementById('modal-body');
+                modalBody.innerHTML = ''; // Clear previous data
+                
+                const requests = JSON.parse(button.getAttribute('data-requests'));
+
+                requests.forEach(request => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${request.mat_name}</td>
+                        <td>${request.mat_brand}</td>
+                        <td>${request.mat_category}</td>
+                        <td>${request.quantity}</td>
+                        <td>${request.status}</td>
+                    `;
+                    modalBody.appendChild(row);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'IT/index.html' %}
+
+{% block content %}
+    <!-- Container for Auto Parts Header -->
+    <div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative; padding: 0 20px;">
+        <!-- Title on the left -->
+        <h1 style="color: white; font-family: 'Istok Web', sans-serif; margin: 0;">Auto Parts</h1>
+        
+        <!-- Search bar on the right -->
+        <form method="GET" action="{% url 'it:materials_it' %}" style="margin: 0; display: flex; align-items: center;">
+            <!-- Search Bar -->
+            <input type="text" name="search" placeholder="Search..." 
+                   style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; width: 250px; height: 40px; margin-right: 10px;"
+                   value="{{ request.GET.search }}">
+            
+            <!-- Category Dropdown -->
+            <select name="category" style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; height: 40px; margin-right: 10px;">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.name }}" {% if category.name == selected_category %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        
+            <!-- Submit Button -->
+            <button type="submit" style="padding: 8px 12px; border-radius: 7px; background-color: #294FA2; color: white; border: none; height: 40px;">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Table Container -->
+    <div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: -5px; border-radius: 7px; overflow: hidden;">
+        <!-- Table for materials -->
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="background-color: #f2f2f2; font-family: 'Alice', regular; font-size: 20px; border-bottom: 2px solid #000;">
+                    <th style="padding: 10px; border-right: 1px solid #ddd;">Name</th>
+                    <th style="padding: 10px; border-right: 1px solid #ddd;">Type</th>
+                    <th style="padding: 10px; border-right: 1px solid #ddd;">Quantity</th>
+                    <th style="padding: 10px; border-right: 1px solid #ddd;">Brand</th>
+                    <th style="padding: 10px; border-right: 1px solid #ddd;">Measurement</th>
+                    <th style="padding: 10px; border-right: 1px solid #ddd;">Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mats in materials %}
+                <tr style="font-family: 'Istok Web', sans-serif; font-size: 18px; border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px;">{{ mats.mat_name }}</td>
+                    <td style="padding: 10px;">{{ mats.mat_type }}</td>
+                    <td style="padding: 10px;">{{ mats.mat_quantity }}</td>
+                    <td style="padding: 10px;">{{ mats.mat_brand }}</td>
+                    <td style="padding: 10px;">{{ mats.mat_measurement }}</td>
+                    <td style="padding: 10px;">{{ mats.mat_category }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 20px; font-style: italic;">No Auto Parts Available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

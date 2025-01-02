@@ -1,0 +1,115 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Istok+Web:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'finance/materials.css' %}">
+
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            color: rgb(17, 17, 17);
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+            border-right: 1px solid #d3d3d3;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar a {
+            color: rgb(17, 17, 17);
+            text-decoration: none;
+            padding: 15px 20px;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+            color: white;
+        }
+        .sidebar a.active {
+            color: white;
+            background-color: #007bff;
+            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 class="text-center">Dashboard</h2><br><br>
+        <a href="{% url 'it:department' %}" class="{% if request.resolver_match.url_name == 'it:department' %}active{% endif %}">
+            Department
+        </a><br>
+        <a href="{% url 'it:bus' %}" class="{% if request.resolver_match.url_name == 'it:bus' %}active{% endif %}">
+            Bus
+        </a><br>
+        <a href="{% url 'it:JO' %}" class="{% if request.resolver_match.url_name == 'it:JO' %}active{% endif %}">
+            Job Order
+        </a><br>
+        <a href="{% url 'it:AR' %}" class="{% if request.resolver_match.url_name == 'it:AR' %}active{% endif %}">
+            Acknowledgement Receipt
+        </a><br>
+        <a href="{% url 'it:purchase_odr' %}" class="{% if request.resolver_match.url_name == 'it:purchase_odr' %}active{% endif %}">
+            Purchase Order
+        </a><br>
+        <a href="{% url 'it:materials_it' %}" class="{% if request.resolver_match.url_name == 'it:materials_it' %}active{% endif %}">
+            Materials
+        </a><br>
+        <a href="{% url 'it:Accounts' %}" class="{% if request.resolver_match.url_name == 'it:Accounts' %}active{% endif %}">
+            Accounts
+        </a><br>
+        <!-- Logout Button -->
+        <a href="#" class="btn btn-danger" id="logoutBtn">
+            Logout
+        </a>
+    </div>
+    
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript to handle logout confirmation -->
+    <script>
+        // Add event listener to the logout button
+        document.getElementById('logoutBtn').addEventListener('click', function(event) {
+            // Show confirmation dialog
+            const confirmLogout = confirm("Are you sure you want to log out?");
+            if (!confirmLogout) {
+                event.preventDefault(); // Prevent the default action if the user cancels
+            } else {
+                // If confirmed, redirect to logout URL
+                window.location.href = "{% url 'it:logout' %}"; // Redirect to your logout URL
+            }
+        });
+    
+        // Prevent back button navigation after logout
+        window.onload = function() {
+            if (!document.referrer.includes(window.location.hostname)) {
+                history.replaceState(null, null, window.location.href);
+                window.history.pushState(null, "", window.location.href);
+                window.onpopstate = function() {
+                    history.go(1); // Prevent navigating back
+                };
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends 'IT/index.html' %}
+{% load static %}
+{% block content %}
+<div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px;">
+    <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">Add Account</h1>
+</div>
+<!-- Main Container -->
+<div class="container mt-4" style="max-width: 800px; background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 7px; padding: 20px;">
+    <h2 class="text-center" style="font-family: 'Istok Web', sans-serif; color: #294FA2; margin-bottom: 30px;">Create Account</h2>
+    
+    <!-- Success and Error Messages -->
+    {% if success is not None %}
+        {% if success %}
+            <div class="alert alert-success" role="alert">
+                Account successfully created!
+            </div>
+        {% else %}
+            <div class="alert alert-danger" role="alert">
+                Failed to create account. Please correct the errors below.
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- Create Account Form -->
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="emp_id_select">Employee</label>
+            {{ form.user_id }}  <!-- Render the employee dropdown -->
+        </div><br>
+
+        <div class="form-group">
+            <label for="id_username">Username</label>
+            {{ form.username }}  <!-- Render the username field -->
+        </div><br>
+
+        <div class="form-group">
+            <label for="id_password">Password</label>
+            {{ form.password }} <!-- Render the password field -->
+        </div><br>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary btn-lg">
+                Create Account
+            </button>
+            <a href="{% url 'it:Accounts' %}" class="btn btn-secondary btn-lg">
+                Go back
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Function to update employee details when an employee is selected
+    document.getElementById('emp_id_select').addEventListener('change', function() {
+        var emp_id = this.value;
+
+        // Perform an AJAX request to fetch employee details by emp_id
+        fetch(`/get_employee_details/${emp_id}/`)
+            .then(response => response.json())
+            .then(data => {
+                // No employee details are shown now, so no updates are needed
+            })
+            .catch(error => {
+                console.log('Error fetching employee details:', error);
+            });
+    });
+</script>
+
+<style>
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+
+    .alert {
+        margin-top: 20px;
+    }
+
+    h2 {
+        font-family: 'Istok Web', sans-serif;
+        color: #294FA2;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+</style>
+
+{% endblock %}

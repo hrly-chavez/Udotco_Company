@@ -1,0 +1,73 @@
+{% extends 'mechanic/index.html' %}
+
+{% block content %}
+<div style="background-color: #294FA2; height: 110px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+    <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">AUTO PARTS ITEM REQUEST</h1>
+    <div style="display: flex; position: absolute; bottom: 10px; right: 20px;">
+        <!-- Search bar -->
+        <form method="GET" action="{% url 'mechanic:view_req' %}">
+            <input 
+                type="text" 
+                name="search" 
+                placeholder="Search..." 
+                style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; width: 250px; height: 40px;" 
+                value="{{ search_query }}"
+            >
+            
+            <!-- Category filter dropdown -->
+            <select name="category" style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; height: 40px; margin-left: 10px;">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category.mat_category_id }}" {% if category.mat_category_id|stringformat:"s" == selected_category %}selected{% endif %}>
+                        {{ category.mat_name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" style="padding: 8px 15px; border-radius: 7px; background-color: #4CAF50; color: white; border: none; height: 40px; margin-left: 10px;">
+                Filter
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Table for materials -->
+<div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
+                <th>Item Req No.</th>
+                <th>Bus Unit No.</th>
+                <th>Approved By</th>
+                <th>Description</th>
+                <th>Material Name</th>
+                <th>Quantity</th>
+                <th>Brand</th>
+                <th>Measurements</th>
+                <th>Category</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in item_requests %}
+            <tr style="font-family: 'Istok Web', sans-serif; font-size: 18px;">
+                <td>{{ item.item_req_num }}</td>
+                <td>{{ item.bus_unit_num }}</td>
+                <td>{{ item.item_req_approved_by }}</td>
+                <td>{{ item.item_req_description }}</td>
+                <td>{{ item.mat_req_id.mat_code.mat_name }}</td>
+                <td>{{ item.mat_req_id.mat_req_qty }}</td>
+                <td>{{ item.mat_req_id.mat_code.mat_brand }}</td>
+                <td>{{ item.mat_req_id.mat_code.mat_measurement }}</td>
+                <td>{{ item.mat_req_id.mat_code.mat_category.mat_name }}</td>
+                <td>{{ item.irstat_id.IR_STAT_STATUS }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center;">No Auto Parts Item Requests Available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

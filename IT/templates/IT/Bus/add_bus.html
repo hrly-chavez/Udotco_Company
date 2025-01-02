@@ -1,0 +1,101 @@
+{% extends 'IT/index.html' %}
+{% load static %}
+{% block content %}
+    <!-- Header Section -->
+    <div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+        <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">Add Bus</h1>
+    </div>
+
+    <!-- Success and Error Messages -->
+    <div style="max-width: 900px; margin: 40px auto;">
+        {% if success %}
+            <div class="alert alert-success" role="alert">
+                Bus added successfully!
+            </div>
+        {% endif %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger" role="alert">
+                Please correct the errors below.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Form Container -->
+    <div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 900px; margin: 40px auto; border-radius: 7px;">
+        <!-- Add Bus Form -->
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <fieldset>
+                <legend>Bus Information</legend>
+
+                <div class="row">
+                    <!-- Bus Unit Number -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_bus_unit_num" class="form-label mt-4">Bus Unit Number: </label>
+                            {{ form.bus_unit_num }}
+                        </div>
+                    </div>
+
+                    <!-- Bus License Plate Number -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_bus_license_plate_number" class="form-label mt-4">Bus License Plate Number: </label>
+                            {{ form.bus_license_plate_number }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Bus Chassis Number -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_bus_chassis_num" class="form-label mt-4">Bus Chassis Number: </label>
+                            {{ form.bus_chassis_num }}
+                        </div>
+                    </div>
+
+                    <!-- Bus Engine Number -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_bus_engine_num" class="form-label mt-4">Bus Engine Number: </label>
+                            {{ form.bus_engine_num }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Bus Year Model -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_bus_year_model" class="form-label mt-4">Bus Year Model: </label>
+                            {{ form.bus_year_model }}
+                        </div>
+                    </div>
+
+                    <!-- Bus Tag Number -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_bus_tag_num" class="form-label mt-4">Bus Tag Number: </label>
+                            {{ form.bus_tag_num }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        Add Bus
+                    </button>
+                </div>
+            </fieldset>
+        </form>
+
+        <!-- Back to Bus List -->
+        <div class="text-center mt-4">
+            <a href="{% url 'it:bus' %}" class="btn btn-secondary btn-lg">Back to Bus</a>
+        </div>
+    </div>
+{% endblock %}
