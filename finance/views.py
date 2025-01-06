@@ -99,19 +99,18 @@ def edit_material(request, mat_code):
     return render(request, 'finance/material/edit_material.html', {'form': form})
 
 #____________________________________MECHANIC_____________________________________________________________
-
 def mechanic_req(request):
-    # Retrieve all material requests but exclude approved ones
+    # Retrieve all material requests but exclude only approved ones
     item_requests = Material_Requested.objects.select_related(
         'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by'
-    ).exclude(item_req_num__item_req_status='Approved')  # Exclude approved items
+    ).exclude(mat_req_status='Approved')  # Exclude approved materials only
 
-    # Fetch all categories for the dropdown (optional, if you still want to display category options)
+    # Fetch all categories for the dropdown (optional, if needed)
     categories = Material_Category.objects.all()
 
     context = {
         'item_requests': item_requests,
-        'categories': categories,  # Remove this if you no longer need categories
+        'categories': categories,
     }
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
@@ -122,23 +121,22 @@ def approve_material(request, mat_req_id):
             # Fetch material request
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Check if the item has already been approved
-            if material_request.item_req_num.item_req_status == 'Approved':
-                return JsonResponse({'success': False, 'error': 'Item has already been approved'})
+            # Check if the material is already approved
+            if material_request.mat_req_status == 'Approved':
+                return JsonResponse({'success': False, 'error': 'Material already approved'})
 
             # Use a transaction to ensure atomicity
             with transaction.atomic():
-                # Update the item request status
-                item_request = material_request.item_req_num
-                item_request.item_req_status = 'Approved'
-                item_request.save()
+                # Update only the material request status
+                material_request.mat_req_status = 'Approved'
+                material_request.save()
 
                 # Create a new Material_Approved entry
                 Material_Approved.objects.create(
                     mat_req_id=material_request,
-                    ir_num=item_request,
-                    mat_approved_qty=material_request.mat_req_qty,  # Approved quantity
-                    mat_approved_code=material_request.mat_code,    # Approved material
+                    ir_num=material_request.item_req_num,
+                    mat_approved_qty=material_request.mat_req_qty,
+                    mat_approved_code=material_request.mat_code,
                 )
 
             return JsonResponse({'success': True})
@@ -332,6 +330,23 @@ def delete_purchase_order(request, po_num):
 def ack_rep(request):
     return render(request, 'finance/ack_rep/ack_rep.html')
 
+def get_approved_items(request):
+    query = request.GET.get('q', '')
+    approved_items = Material_Approved.objects.filter(
+        mat_approved_code__mat_name__icontains=query
+    ).select_related('mat_approved_code')[:10]
+
+    data = []
+    for item in approved_items:
+        data.append({
+            'id': item.pk,
+            'text': f"{item.mat_approved_code.mat_name} - {item.mat_approved_qty}"
+        })
+
+    # Debug: Print the data to the console to verify
+    print(data)
+
+    return JsonResponse({'results': data})
 def create_ack_rep(request):
     if request.method == 'POST':
         form = AcknowledgmentReceiptForm(request.POST)
@@ -342,7 +357,6 @@ def create_ack_rep(request):
         form = AcknowledgmentReceiptForm()
 
     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
-
 
 
 

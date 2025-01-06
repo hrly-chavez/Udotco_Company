@@ -94,6 +94,12 @@ class MaterialRequestApprovalForm(forms.ModelForm):
         fields = ['mat_req_qty', 'mat_code']  
 
 class AcknowledgmentReceiptForm(forms.ModelForm):
+    item_approved_id = forms.ModelChoiceField(
+        queryset=Material_Approved.objects.select_related('mat_approved_code'),
+        widget=forms.Select(attrs={'class': 'form-control select2'}),  # Add a select2 class
+        label="Approved Item"
+    )
+
     class Meta:
         model = Acknowledgment_Receipt
         fields = ['ar_date_received', 'ar_date_receiver', 'ar_status', 'ar_note', 'item_approved_id']
@@ -109,23 +115,13 @@ class AcknowledgmentReceiptForm(forms.ModelForm):
             'ar_date_receiver': forms.Select(attrs={'class': 'form-control'}),
             'ar_status': forms.Select(attrs={'class': 'form-control'}),
             'ar_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'item_approved_id': forms.Select(attrs={'class': 'form-control'}),
         }
 
-    def clean_ar_date_received(self):
-        ar_date_received = self.cleaned_data.get('ar_date_received')
-        if ar_date_received and ar_date_received > now().date():
-            raise ValidationError("The date received cannot be in the future.")
-        return ar_date_received
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Customize the dropdown display
+        self.fields['item_approved_id'].queryset = Material_Approved.objects.select_related(
+            'mat_approved_code'
+        )
+        self.fields['item_approved_id'].label_from_instance = lambda obj: f"{obj.mat_approved_code.mat_name} - Qty: {obj.mat_approved_qty}"
 
-    def clean_ar_status(self):
-        ar_status = self.cleaned_data.get('ar_status')
-        if ar_status not in ['Pending', 'Ongoing', 'Delivered']:
-            raise ValidationError("Invalid status.")
-        return ar_status
-
-    def clean_ar_date_receiver(self):
-        ar_date_receiver = self.cleaned_data.get('ar_date_receiver')
-        if not ar_date_receiver:
-            raise ValidationError("Receiver is required.")
-        return ar_date_receiver

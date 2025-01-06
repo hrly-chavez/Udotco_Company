@@ -28,7 +28,7 @@ urlpatterns = [
     path('purchase_order/filter/', views.filter_purchase_orders, name='filter_purchase_orders'),
 
 #_________________________________________ACKNOWLEDGE RECEIPT_____________________________________________
-
+    path('get-approved-items/', views.get_approved_items, name='get_approved_items'), 
     path('acknowledgement report/', views.ack_rep, name = 'ack_rep'),
     path('create-ack-rep/', views.create_ack_rep, name='create_ack_rep'),
 #_________________________________________________________________________________________________________

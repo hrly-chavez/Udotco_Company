@@ -144,9 +144,17 @@ class Material_Requested(models.Model):
     mat_req_qty = models.PositiveIntegerField()
     mat_code = models.ForeignKey('Material', on_delete=models.CASCADE, db_constraint=True)
     item_req_num = models.ForeignKey('Item_Request', on_delete=models.CASCADE, db_constraint=True)
+    
+    # Add a status field to track approval status of each material request
+    mat_req_status = models.CharField(max_length=20, choices=[
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Denied', 'Denied')
+    ], default='Pending')
 
     def __str__(self):
         return f"{self.item_req_num} {self.mat_req_qty}"
+
 
 class Item_Request(models.Model):
     IR_STAT_CHOICES = [
