@@ -1,7 +1,7 @@
 {% extends 'finance/base.html' %}
 
 {% block content %}
-<div style="background-color: #294FA2; height: 110px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+<div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
     <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">ITEM REQUEST</h1>
 </div>
 
@@ -9,7 +9,7 @@
 <div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
     <table style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead>
-            <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
+            <tr style="border: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
                 <th>Item Req No.</th>
                 <th>Bus Unit No.</th>
                 <th>Approved By</th>
@@ -20,11 +20,12 @@
                 <th>Measurements</th>
                 <th>Category</th>
                 <th>Status</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for item in item_requests %}
-            <tr style="font-family: 'Istok Web', sans-serif; font-size: 18px;">
+            <tr id="row-{{ item.mat_req_id }}" style="font-family: 'Istok Web', sans-serif; font-size: 18px;">
                 <td>{{ item.item_req_num.item_req_num }}</td>
                 <td>{{ item.item_req_num.bus_unit_num.bus_unit_num }}</td>
                 <td>{{ item.item_req_num.item_req_approved_by.emp_fname }} {{ item.item_req_num.item_req_approved_by.emp_lname }}</td>
@@ -35,13 +36,108 @@
                 <td>{{ item.mat_code.mat_measurement }}</td>
                 <td>{{ item.mat_code.mat_category.mat_name }}</td>
                 <td>{{ item.item_req_num.item_req_status }}</td>
+                <td>
+                    <!-- Approve Button -->
+                    <button onclick="approveMaterial('{{ item.mat_req_id }}')"
+                        style="background-color: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                        Approve
+                    </button>
+                    <!-- Deny Button -->
+                    <button onclick="denyMaterial('{{ item.mat_req_id }}')"
+                        style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                        Deny
+                    </button>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="10" style="text-align: center;">No Auto Parts Item Requests Available</td>
+                <td colspan="11" style="text-align: center;">No Auto Parts Item Requests Available</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script>
+function approveMaterial(matReqId) {
+    if (confirm("Are you sure you want to approve this item?")) {
+        fetch(`/finance/approve-material/${matReqId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the approved row from the table
+                const row = document.getElementById(`row-${matReqId}`);
+                if (row) {
+                    row.remove();  // Remove the row from the table
+                    alert("Material approved successfully!");
+                }
+            } else {
+                alert("Failed to approve material: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            alert("An error occurred: " + error.message);
+            console.error("Error:", error);
+        });
+    }
+}
+
+function denyMaterial(matReqId) {
+    if (confirm("Are you sure you want to deny this item?")) {
+        fetch(`/finance/deny-material/${matReqId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the denied row from the table
+                const row = document.getElementById(`row-${matReqId}`);
+                if (row) row.remove();  // Remove the denied row from the table
+                alert("Material denied successfully!");
+            } else {
+                alert("Failed to deny material: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(error => {
+            alert("An error occurred: " + error.message);
+            console.error("Error:", error);
+        });
+    }
+}
+</script>
+    <!-- function approveMaterial(matReqId) {
+        if (confirm("Are you sure you want to approve this item?")) {
+            fetch(`/finance/approve-material/${matReqId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById(`row-${matReqId}`);
+                    if (row) row.remove();
+                    alert("Material approved successfully!");
+                } else {
+                    alert("Failed to approve material: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                alert("An error occurred: " + error.message);
+                console.error("Error:", error);
+            });
+        }
+    } -->
 {% endblock %}

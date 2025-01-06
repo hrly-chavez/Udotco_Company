@@ -5,19 +5,21 @@ from shared.models import *
 class MaterialForm(forms.ModelForm):
     class Meta:
         model = Material
-        fields = ['mat_name', 'mat_quantity', 'mat_brand', 'mat_measurement', 'mat_category']
+        fields = ['mat_name', 'mat_quantity', 'mat_brand', 'mat_measurement', 'mat_category','mat_max_request']
         labels = {
             'mat_name' : 'Name',
             'mat_quantity' : 'Quantity',
             'mat_brand' :   'Brand',
             'mat_measurement' : 'Measurement',
             'mat_category' : 'Category',
+            'mat_max_request': 'Max Requestion',
         }
         widgets = {
             'mat_measurement': forms.TextInput(attrs={'placeholder': 'Optional: Measurement'}),
             'mat_name': forms.TextInput(attrs={'placeholder': 'Enter material name'}),
             'mat_quantity': forms.NumberInput(attrs={'placeholder': 'Enter quantity'}),
-            'mat_category': forms.Select(attrs={'placeholder': 'Select Material Category'}), 
+            'mat_category': forms.Select(attrs={'placeholder': 'Select Material Category'}),
+            'mat_max_request': forms.NumberInput(attrs={'placeholder':'Optional: Enter Value for Max Requesition'}) 
         }
 
     def clean_mat_quantity(self):
@@ -84,3 +86,46 @@ class PurchaseOrderForm(forms.ModelForm):
 
 class DateFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+
+
+class MaterialRequestApprovalForm(forms.ModelForm):
+    class Meta:
+        model = Material_Requested
+        fields = ['mat_req_qty', 'mat_code']  
+
+class AcknowledgmentReceiptForm(forms.ModelForm):
+    class Meta:
+        model = Acknowledgment_Receipt
+        fields = ['ar_date_received', 'ar_date_receiver', 'ar_status', 'ar_note', 'item_approved_id']
+        labels = {
+            'ar_date_received': 'Date Received',
+            'ar_date_receiver': 'Receiver',
+            'ar_status': 'Status',
+            'ar_note': 'Note',
+            'item_approved_id': 'Approved Item',
+        }
+        widgets = {
+            'ar_date_received': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'ar_date_receiver': forms.Select(attrs={'class': 'form-control'}),
+            'ar_status': forms.Select(attrs={'class': 'form-control'}),
+            'ar_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'item_approved_id': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def clean_ar_date_received(self):
+        ar_date_received = self.cleaned_data.get('ar_date_received')
+        if ar_date_received and ar_date_received > now().date():
+            raise ValidationError("The date received cannot be in the future.")
+        return ar_date_received
+
+    def clean_ar_status(self):
+        ar_status = self.cleaned_data.get('ar_status')
+        if ar_status not in ['Pending', 'Ongoing', 'Delivered']:
+            raise ValidationError("Invalid status.")
+        return ar_status
+
+    def clean_ar_date_receiver(self):
+        ar_date_receiver = self.cleaned_data.get('ar_date_receiver')
+        if not ar_date_receiver:
+            raise ValidationError("Receiver is required.")
+        return ar_date_receiver

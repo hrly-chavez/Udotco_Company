@@ -1,0 +1,50 @@
+{% extends 'finance/base.html' %}
+
+{% block content %}
+    <!-- Horizontal blue bar with text aligned to the left -->
+    <div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+        <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">CREATE RECEIPT</h1>
+    </div>
+
+    <!-- Form wrapper to make the content look like a document -->
+    <div style="width: 100%; max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 7px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Date Received Field -->
+            <div style="margin-bottom: 10px;">
+                <label for="id_ar_date_received">Date Received:</label>
+                {{ form.ar_date_received }}
+            </div>
+
+            <!-- Receiver Field -->
+            <div style="margin-bottom: 10px;">
+                <label for="id_ar_date_receiver">Receiver:</label>
+                {{ form.ar_date_receiver }}
+            </div>
+
+            <!-- Status Field -->
+            <div style="margin-bottom: 10px;">
+                <label for="id_ar_status">Status:</label>
+                {{ form.ar_status }}
+            </div>
+
+            <!-- Note Field -->
+            <div style="margin-bottom: 10px;">
+                <label for="id_ar_note">Note:</label>
+                {{ form.ar_note }}
+            </div>
+
+            <!-- Approved Item Field -->
+            <div style="margin-bottom: 10px;">
+                <label for="id_item_approved_id">Approved Item:</label>
+                {{ form.item_approved_id }}
+            </div>
+
+            <!-- Submit Button -->
+            <div style="margin-top: 20px;">
+                <button type="submit" style="padding: 10px 20px; background-color: #294FA2; color: white;">Create Receipt</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

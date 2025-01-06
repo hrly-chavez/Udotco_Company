@@ -1,9 +1,15 @@
 {% extends 'finance/base.html' %}
 
 {% block content %}
-    <!-- Horizontal blue bar with text aligned to the left and space added -->
-    <div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+    <!-- Horizontal blue bar with text aligned to the left and button at bottom left -->
+    <div style="background-color: #294FA2; height: 150px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
         <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">ACKNOWLEDGEMENT RECEIPT</h1>
+        
+        <!-- Create New Acknowledgment Receipt Button -->
+        <a href="{% url 'finance:create_ack_rep' %}" 
+           style="padding: 10px 20px; background-color: #2d6fa0; color: white; border-radius: 5px; text-decoration: none; position: absolute; bottom: 10px; left: 20px; font-size: 16px; font-family: 'Arial', sans-serif;">
+            Create New Acknowledgment Receipt
+        </a>
     </div>
     
 {% endblock %}

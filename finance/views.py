@@ -8,7 +8,8 @@ from django.utils.timezone import now
 from django.contrib.auth import logout
 from django.contrib import messages
 from django.db.models import Q
-
+from django.http import JsonResponse
+from django.db import transaction
 def finance(request):
     return render(request, 'finance/base.html')
 #___________________________________________MATERIALS____________________________________________________
@@ -100,37 +101,66 @@ def edit_material(request, mat_code):
 #____________________________________MECHANIC_____________________________________________________________
 
 def mechanic_req(request):
-     # Retrieve search query and selected category from GET parameters
-    search_query = request.GET.get('search', '')
-    selected_category = request.GET.get('category', '')
-
-    # Filter materials based on search query and category
+    # Retrieve all material requests but exclude approved ones
     item_requests = Material_Requested.objects.select_related(
-        'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by').all()
+        'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by'
+    ).exclude(item_req_num__item_req_status='Approved')  # Exclude approved items
 
-    if search_query:
-        item_requests = item_requests.filter(
-            Q(mat_code__mat_name__icontains=search_query) |
-            Q(mat_code__mat_brand__icontains=search_query) |
-            Q(mat_code__mat_category__mat_name__icontains=search_query) |
-            Q(item_req_num__item_req_description__icontains=search_query)
-        )
-
-    if selected_category:
-        item_requests = item_requests.filter(mat_code__mat_category__mat_category_id=selected_category)
-
-    # Fetch all categories for the dropdown filter
+    # Fetch all categories for the dropdown (optional, if you still want to display category options)
     categories = Material_Category.objects.all()
 
     context = {
         'item_requests': item_requests,
-        'categories': categories,
-        'search_query': search_query,
-        'selected_category': selected_category,
+        'categories': categories,  # Remove this if you no longer need categories
     }
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
 
+def approve_material(request, mat_req_id):
+    if request.method == "POST":
+        try:
+            # Fetch material request
+            material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
+
+            # Check if the item has already been approved
+            if material_request.item_req_num.item_req_status == 'Approved':
+                return JsonResponse({'success': False, 'error': 'Item has already been approved'})
+
+            # Use a transaction to ensure atomicity
+            with transaction.atomic():
+                # Update the item request status
+                item_request = material_request.item_req_num
+                item_request.item_req_status = 'Approved'
+                item_request.save()
+
+                # Create a new Material_Approved entry
+                Material_Approved.objects.create(
+                    mat_req_id=material_request,
+                    ir_num=item_request,
+                    mat_approved_qty=material_request.mat_req_qty,  # Approved quantity
+                    mat_approved_code=material_request.mat_code,    # Approved material
+                )
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def deny_material(request, mat_req_id):
+    if request.method == "POST":
+        try:
+            # Fetch material request
+            material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
+
+            # Delete the material request entry
+            material_request.delete()
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 #____________________________________PURCHASE ORDER________________________________________________________
 
@@ -301,6 +331,21 @@ def delete_purchase_order(request, po_num):
 #____________________________________AR_____________________________________________________________
 def ack_rep(request):
     return render(request, 'finance/ack_rep/ack_rep.html')
+
+def create_ack_rep(request):
+    if request.method == 'POST':
+        form = AcknowledgmentReceiptForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('ack_rep_list')  
+    else:
+        form = AcknowledgmentReceiptForm()
+
+    return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
+
+
+
+
 
 def logout_view(request):
     # Clear the session (log out the user)
