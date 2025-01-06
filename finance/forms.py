@@ -96,32 +96,26 @@ class MaterialRequestApprovalForm(forms.ModelForm):
 class AcknowledgmentReceiptForm(forms.ModelForm):
     item_approved_id = forms.ModelChoiceField(
         queryset=Material_Approved.objects.select_related('mat_approved_code'),
-        widget=forms.Select(attrs={'class': 'form-control select2'}),  # Add a select2 class
+        widget=forms.Select(attrs={'class': 'form-control select2'}),
         label="Approved Item"
     )
 
     class Meta:
         model = Acknowledgment_Receipt
-        fields = ['ar_date_received', 'ar_date_receiver', 'ar_status', 'ar_note', 'item_approved_id']
+        fields = ['ar_note', 'item_approved_id']  # Exclude ar_date_received, ar_date_receiver, and ar_status
         labels = {
-            'ar_date_received': 'Date Received',
-            'ar_date_receiver': 'Receiver',
-            'ar_status': 'Status',
             'ar_note': 'Note',
             'item_approved_id': 'Approved Item',
         }
         widgets = {
-            'ar_date_received': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'ar_date_receiver': forms.Select(attrs={'class': 'form-control'}),
-            'ar_status': forms.Select(attrs={'class': 'form-control'}),
             'ar_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Customize the dropdown display
-        self.fields['item_approved_id'].queryset = Material_Approved.objects.select_related(
-            'mat_approved_code'
-        )
+        self.fields['item_approved_id'].queryset = Material_Approved.objects.filter(
+            mat_req_id__mat_req_status='Approved'  # Ensure this condition matches your approval logic
+        ).select_related('mat_approved_code')
         self.fields['item_approved_id'].label_from_instance = lambda obj: f"{obj.mat_approved_code.mat_name} - Qty: {obj.mat_approved_qty}"
+
 

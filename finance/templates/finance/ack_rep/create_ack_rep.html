@@ -1,79 +1,116 @@
 {% extends 'finance/base.html' %}
 
 {% block content %}
-    <!-- Horizontal blue bar with text aligned to the left -->
-    <div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
-        <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">CREATE RECEIPT</h1>
-    </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-    <!-- Form wrapper to make the content look like a document -->
-    <div style="width: 100%; max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 7px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
-        <form method="POST">
-            {% csrf_token %}
-            
-            <!-- Date Received Field -->
-            <div style="margin-bottom: 10px;">
-                <label for="id_ar_date_received">Date Received:</label>
-                {{ form.ar_date_received }}
-            </div>
+<div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+    <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">CREATE RECEIPT</h1>
+</div>
 
-            <!-- Receiver Field -->
-            <div style="margin-bottom: 10px;">
-                <label for="id_ar_date_receiver">Receiver:</label>
-                {{ form.ar_date_receiver }}
-            </div>
+<div style="width: 100%; max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 7px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
+    <form method="POST" id="receipt-form">
+        {% csrf_token %}
 
-            <!-- Status Field -->
-            <div style="margin-bottom: 10px;">
-                <label for="id_ar_status">Status:</label>
-                {{ form.ar_status }}
-            </div>
+        <!-- Note Field -->
+        <div style="margin-bottom: 10px;">
+            <label for="id_ar_note">Note:</label>
+            {{ form.ar_note }}
+        </div>
 
-            <!-- Note Field -->
-            <div style="margin-bottom: 10px;">
-                <label for="id_ar_note">Note:</label>
-                {{ form.ar_note }}
-            </div>
+        <!-- Approved Item Field -->
+        <div style="margin-bottom: 10px;">
+            <label for="id_item_approved_id">Approved Item:</label>
+            {{ form.item_approved_id }}
+            <button type="button" id="add-item-btn" style="margin-left: 10px; padding: 5px 10px; background-color: #294FA2; color: white;">Add Item</button>
+        </div>
 
-            <!-- Approved Item Field -->
-            <div style="margin-bottom: 10px;">
-                <label for="id_item_approved_id">Approved Item:</label>
-                {{ form.item_approved_id }}
-            </div>
+        <!-- Table for Selected Materials -->
+        <div style="margin-top: 20px;">
+            <h3>Selected Materials</h3>
+            <table id="materials-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="border: 1px solid #ddd; padding: 8px;">Material Name</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Quantity</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be added dynamically here -->
+                </tbody>
+            </table>
+        </div>
 
-            <!-- Submit Button -->
-            <div style="margin-top: 20px;">
-                <button type="submit" style="padding: 10px 20px; background-color: #294FA2; color: white;">Create Receipt</button>
-            </div>
-        </form>
-    </div>
-    <script>
-        $(document).ready(function() {
-            $('#id_item_approved_id').select2({
-                ajax: {
-                    url: "{% url 'finance:get_approved_items' %}",  // This should be correct, verify the URL pattern.
-                    dataType: 'json',
-                    delay: 250,  // Delay for better performance
-                    data: function (params) {
-                        return {
-                            q: params.term  // Pass the search term
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.results  // Map results to Select2 format
-                        };
-                    },
-                    cache: true
-                },
-                placeholder: 'Select an approved item',  // Placeholder text
-                minimumInputLength: 1  // Start searching after 1 character
-            });
+        <!-- Hidden Input to Store Selected Materials -->
+        <input type="hidden" name="selected_materials" id="selected-materials-input">
+
+        <!-- Submit Button -->
+        <div style="margin-top: 20px;">
+            <button type="submit" style="padding: 10px 20px; background-color: #294FA2; color: white;">Create Receipt</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const addItemBtn = document.getElementById("add-item-btn");
+        const materialsTable = document.getElementById("materials-table").querySelector("tbody");
+        const selectedMaterialsInput = document.getElementById("selected-materials-input");
+
+        addItemBtn.addEventListener("click", function () {
+            const selectedOption = document.getElementById("id_item_approved_id").selectedOptions[0];
+            const materialText = selectedOption.textContent;
+            const materialId = selectedOption.value;
+
+            if (!materialId) {
+                alert("Please select a material to add.");
+                return;
+            }
+
+            // Extract material name and quantity from the text
+            const [materialName, quantityPart] = materialText.split(" - Qty: ");
+            const materialQuantity = parseInt(quantityPart, 10);
+
+            // Check if material is already in the table
+            const existingRow = materialsTable.querySelector(`tr[data-material-id="${materialId}"]`);
+            if (existingRow) {
+                alert("This material is already added.");
+                return;
+            }
+
+            // Create a new row
+            const newRow = document.createElement("tr");
+            newRow.setAttribute("data-material-id", materialId);
+            newRow.innerHTML = `
+                <td style="border: 1px solid #ddd; padding: 8px;">${materialName}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${materialQuantity}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">
+                    <button type="button" class="remove-material-btn" style="padding: 5px 10px; background-color: red; color: white;">Remove</button>
+                </td>
+            `;
+
+            materialsTable.appendChild(newRow);
+
+            // Update hidden input with selected materials
+            updateSelectedMaterials(materialId, materialQuantity);
         });
-    </script>
-    
 
+        materialsTable.addEventListener("click", function (e) {
+            if (e.target.classList.contains("remove-material-btn")) {
+                const row = e.target.closest("tr");
+                const materialId = row.getAttribute("data-material-id");
+                row.remove();
+                updateSelectedMaterials(materialId, null);
+            }
+        });
 
+        function updateSelectedMaterials(materialId, materialQuantity) {
+            const selectedMaterials = [];
+            materialsTable.querySelectorAll("tr").forEach(row => {
+                const id = row.getAttribute("data-material-id");
+                const quantity = row.children[1].textContent.trim();
+                selectedMaterials.push({ id: id, quantity: parseInt(quantity, 10) });
+            });
+            selectedMaterialsInput.value = JSON.stringify(selectedMaterials);
+        }
+    });
+</script>
 {% endblock %}

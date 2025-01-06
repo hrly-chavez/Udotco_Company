@@ -10,6 +10,9 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import JsonResponse
 from django.db import transaction
+import json
+
+
 def finance(request):
     return render(request, 'finance/base.html')
 #___________________________________________MATERIALS____________________________________________________
@@ -327,38 +330,64 @@ def delete_purchase_order(request, po_num):
     return redirect('finance:purchase_odr')
 
 #____________________________________AR_____________________________________________________________
+
 def ack_rep(request):
-    return render(request, 'finance/ack_rep/ack_rep.html')
+    # Get all acknowledgment receipts
+    receipts = Acknowledgment_Receipt.objects.all()
+    return render(request, 'finance/ack_rep/ack_rep.html', {'receipts': receipts})
 
-def get_approved_items(request):
-    query = request.GET.get('q', '')
-    approved_items = Material_Approved.objects.filter(
-        mat_approved_code__mat_name__icontains=query
-    ).select_related('mat_approved_code')[:10]
 
-    data = []
-    for item in approved_items:
-        data.append({
-            'id': item.pk,
-            'text': f"{item.mat_approved_code.mat_name} - {item.mat_approved_qty}"
-        })
+# def create_ack_rep(request):
+#     approved_materials = Material_Approved.objects.select_related('mat_approved_code').all()
+    
+#     if request.method == 'POST':
+#         form = AcknowledgmentReceiptForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('finance:ack_rep')  
+#     else:
+#         form = AcknowledgmentReceiptForm()
 
-    # Debug: Print the data to the console to verify
-    print(data)
+#     return render(request, 'finance/ack_rep/create_ack_rep.html', {
+#         'form': form,
+#         'approved_materials': approved_materials
+#     })
 
-    return JsonResponse({'results': data})
+# def create_ack_rep(request):
+#     if request.method == 'POST':
+#         form = AcknowledgmentReceiptForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('ack_rep_list')  
+#     else:
+#         form = AcknowledgmentReceiptForm()
+
+#     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
+
+
+
+
 def create_ack_rep(request):
     if request.method == 'POST':
         form = AcknowledgmentReceiptForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('ack_rep_list')  
+            # Save the acknowledgment receipt
+            acknowledgment_receipt = form.save()
+
+            # Process the selected materials from the hidden input
+            selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
+            for material_data in selected_materials:
+                material = Material_Approved.objects.get(pk=material_data['id'])
+                # Associate the material with the acknowledgment receipt
+                acknowledgment_receipt.item_approved_id = material
+                acknowledgment_receipt.save()
+
+            # Redirect to the appropriate list page (change 'ack_rep_list' to an existing view)
+            return redirect('finance:ack_rep')  # Adjust the URL name if needed
     else:
         form = AcknowledgmentReceiptForm()
 
     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
-
-
 
 
 def logout_view(request):

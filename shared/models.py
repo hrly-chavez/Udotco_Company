@@ -199,7 +199,7 @@ class Material_Approved(models.Model):
         return f"Approved Material: {self.mat_approved_code.mat_name} - {self.mat_approved_qty}"
 
 class Accounts(models.Model):
-    user_id = models.OneToOneField(
+    user_id = models.OneToOneField( 
         'Employee', 
         on_delete=models.CASCADE, 
         db_constraint=True, 
