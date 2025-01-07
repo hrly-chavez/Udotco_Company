@@ -116,6 +116,6 @@ class AcknowledgmentReceiptForm(forms.ModelForm):
         self.fields['item_approved_id'].queryset = Material_Approved.objects.filter(
             mat_req_id__mat_req_status='Approved'  # Ensure this condition matches your approval logic
         ).select_related('mat_approved_code')
-        self.fields['item_approved_id'].label_from_instance = lambda obj: f"{obj.mat_approved_code.mat_name} - Qty: {obj.mat_approved_qty}"
+        self.fields['item_approved_id'].label_from_instance = lambda obj: f"{obj.mat_approved_code.mat_name} - Quantity: {obj.mat_approved_qty}"
 
 

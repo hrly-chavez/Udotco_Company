@@ -192,9 +192,10 @@ class Material_Approved(models.Model):
     mat_req_id = models.ForeignKey(Material_Requested, on_delete=models.CASCADE, related_name='approved_materials')
     ir_num = models.ForeignKey(Item_Request, on_delete=models.CASCADE)
     mat_approved_qty = models.PositiveIntegerField()  # Approved quantity
-    mat_approved_code = models.ForeignKey(Material, on_delete=models.CASCADE)  # Material code
+    mat_approved_code = models.ForeignKey(Material, on_delete=models.SET_NULL,null=True,blank=True)  # Material code
     date_approved = models.DateTimeField(auto_now_add=True)
-
+    ar_num = models.ForeignKey(Acknowledgment_Receipt, on_delete=models.CASCADE, null=True, blank=True)  
+    is_acknowledged = models.BooleanField(default=False)
     def __str__(self):
         return f"Approved Material: {self.mat_approved_code.mat_name} - {self.mat_approved_qty}"
 

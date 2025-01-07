@@ -29,7 +29,6 @@
                 <thead>
                     <tr style="background-color: #f2f2f2;">
                         <th style="border: 1px solid #ddd; padding: 8px;">Material Name</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Quantity</th>
                         <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
                     </tr>
                 </thead>
@@ -65,9 +64,8 @@
                 return;
             }
 
-            // Extract material name and quantity from the text
-            const [materialName, quantityPart] = materialText.split(" - Qty: ");
-            const materialQuantity = parseInt(quantityPart, 10);
+            // Extract material name from the text (ignoring quantity now)
+            const materialName = materialText;
 
             // Check if material is already in the table
             const existingRow = materialsTable.querySelector(`tr[data-material-id="${materialId}"]`);
@@ -76,12 +74,11 @@
                 return;
             }
 
-            // Create a new row
+            // Create a new row without the quantity
             const newRow = document.createElement("tr");
             newRow.setAttribute("data-material-id", materialId);
             newRow.innerHTML = `
                 <td style="border: 1px solid #ddd; padding: 8px;">${materialName}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${materialQuantity}</td>
                 <td style="border: 1px solid #ddd; padding: 8px;">
                     <button type="button" class="remove-material-btn" style="padding: 5px 10px; background-color: red; color: white;">Remove</button>
                 </td>
@@ -89,8 +86,8 @@
 
             materialsTable.appendChild(newRow);
 
-            // Update hidden input with selected materials
-            updateSelectedMaterials(materialId, materialQuantity);
+            // Update hidden input with selected materials (only the ID)
+            updateSelectedMaterials(materialId);
         });
 
         materialsTable.addEventListener("click", function (e) {
@@ -98,17 +95,25 @@
                 const row = e.target.closest("tr");
                 const materialId = row.getAttribute("data-material-id");
                 row.remove();
-                updateSelectedMaterials(materialId, null);
+                updateSelectedMaterials(materialId, true);  // Mark the material as removed
             }
         });
 
-        function updateSelectedMaterials(materialId, materialQuantity) {
+        function updateSelectedMaterials(materialId, remove = false) {
             const selectedMaterials = [];
             materialsTable.querySelectorAll("tr").forEach(row => {
                 const id = row.getAttribute("data-material-id");
-                const quantity = row.children[1].textContent.trim();
-                selectedMaterials.push({ id: id, quantity: parseInt(quantity, 10) });
+                selectedMaterials.push({ id: id });
             });
+
+            // Handle material removal (if any)
+            if (remove) {
+                const index = selectedMaterials.findIndex(item => item.id === materialId);
+                if (index > -1) {
+                    selectedMaterials.splice(index, 1);
+                }
+            }
+
             selectedMaterialsInput.value = JSON.stringify(selectedMaterials);
         }
     });

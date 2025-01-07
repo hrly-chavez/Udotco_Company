@@ -332,60 +332,112 @@ def delete_purchase_order(request, po_num):
 #____________________________________AR_____________________________________________________________
 
 def ack_rep(request):
-    # Get all acknowledgment receipts
-    receipts = Acknowledgment_Receipt.objects.all()
+    receipts = Acknowledgment_Receipt.objects.prefetch_related(
+        'material_approved_set' 
+    )
     return render(request, 'finance/ack_rep/ack_rep.html', {'receipts': receipts})
 
 
-# def create_ack_rep(request):
-#     approved_materials = Material_Approved.objects.select_related('mat_approved_code').all()
-    
-#     if request.method == 'POST':
-#         form = AcknowledgmentReceiptForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('finance:ack_rep')  
-#     else:
-#         form = AcknowledgmentReceiptForm()
-
-#     return render(request, 'finance/ack_rep/create_ack_rep.html', {
-#         'form': form,
-#         'approved_materials': approved_materials
-#     })
 
 # def create_ack_rep(request):
 #     if request.method == 'POST':
 #         form = AcknowledgmentReceiptForm(request.POST)
+
 #         if form.is_valid():
-#             form.save()
-#             return redirect('ack_rep_list')  
+#             try:
+#                 with transaction.atomic():  # Use atomic transaction for rollback support
+#                     # Save acknowledgment receipt
+#                     acknowledgment_receipt = form.save()
+
+#                     # Process and validate selected materials
+#                     selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
+#                     for material_data in selected_materials:
+#                         material_approved = Material_Approved.objects.get(pk=material_data['id'])
+#                         material = material_approved.mat_approved_code  # Get linked Material object
+
+#                         # Check if enough quantity is available in inventory
+#                         if material.mat_quantity < material_approved.mat_approved_qty:
+#                             raise ValueError(f"Not enough stock for {material.mat_name}. Available: {material.mat_quantity}, Required: {material_approved.mat_approved_qty}")
+
+#                         # Deduct the approved quantity from inventory
+#                         material.mat_quantity -= material_approved.mat_approved_qty
+#                         material.save()
+
+#                         # Link material to acknowledgment receipt
+#                         material_approved.ar_num = acknowledgment_receipt
+#                         material_approved.save()
+
+#                     # Redirect on success
+#                     messages.success(request, "Acknowledgment receipt created successfully!")
+#                     return redirect('finance:ack_rep')
+
+#             except ValueError as e:
+#                 # Handle stock errors and rollback changes
+#                 messages.error(request, str(e))  # Show error message
+#                 transaction.rollback()  # Explicitly rollback if needed
+
+#             except Exception as e:
+#                 # Catch any other unexpected errors
+#                 messages.error(request, f"An error occurred: {e}")
+#                 transaction.rollback()
+
+#         else:
+#             messages.error(request, "Invalid form data. Please check the inputs.")
+
 #     else:
 #         form = AcknowledgmentReceiptForm()
 
 #     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
 
-
-
-
 def create_ack_rep(request):
     if request.method == 'POST':
         form = AcknowledgmentReceiptForm(request.POST)
+
         if form.is_valid():
-            # Save the acknowledgment receipt
-            acknowledgment_receipt = form.save()
+            try:
+                with transaction.atomic():
+                    # Save acknowledgment receipt
+                    acknowledgment_receipt = form.save()
 
-            # Process the selected materials from the hidden input
-            selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
-            for material_data in selected_materials:
-                material = Material_Approved.objects.get(pk=material_data['id'])
-                # Associate the material with the acknowledgment receipt
-                acknowledgment_receipt.item_approved_id = material
-                acknowledgment_receipt.save()
+                    # Process and validate selected materials
+                    selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
+                    for material_data in selected_materials:
+                        material_approved = Material_Approved.objects.get(pk=material_data['id'])
+                        material = material_approved.mat_approved_code  # Get linked Material object
 
-            # Redirect to the appropriate list page (change 'ack_rep_list' to an existing view)
-            return redirect('finance:ack_rep')  # Adjust the URL name if needed
+                        # Check if enough quantity is available in inventory
+                        if material.mat_quantity < material_approved.mat_approved_qty:
+                            raise ValueError(f"Not enough stock for {material.mat_name}. Available: {material.mat_quantity}, Required: {material_approved.mat_approved_qty}")
+
+                        # Deduct the approved quantity from inventory
+                        material.mat_quantity -= material_approved.mat_approved_qty
+                        material.save()
+
+                        # Link material to acknowledgment receipt
+                        material_approved.ar_num = acknowledgment_receipt
+                        material_approved.save()
+
+                    # Redirect on success
+                    messages.success(request, "Acknowledgment receipt created successfully!")
+                    return redirect('finance:ack_rep')
+
+            except ValueError as e:
+                messages.error(request, str(e))
+                transaction.rollback()
+
+            except Exception as e:
+                messages.error(request, f"An error occurred: {e}")
+                transaction.rollback()
+
+        else:
+            messages.error(request, "Invalid form data. Please check the inputs.")
+
     else:
         form = AcknowledgmentReceiptForm()
+
+        # Filter materials to exclude those already linked to an acknowledgment receipt
+        available_materials = Material_Approved.objects.filter(ar_num__isnull=True)  # Exclude materials with an acknowledgment receipt
+        form.fields['item_approved_id'].queryset = available_materials
 
     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
 
