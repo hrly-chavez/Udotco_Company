@@ -14,18 +14,19 @@ from datetime import datetime
 
 # Create your views here.
 
-def login_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if 'user_id' not in request.session:
-            return redirect('login:login')  # Redirect to login page if not logged in
-        return view_func(request, *args, **kwargs)
-    return wrapper
+# def login_required(view_func):
+#     def wrapper(request, *args, **kwargs):
+#         if 'user_id' not in request.session:
+#             return redirect('login:login')  # Redirect to login page if not logged in
+#         return view_func(request, *args, **kwargs)
+#     return wrapper
 
-@login_required
+
+#@login_required
 def department(request):
     return render(request, 'IT/department/department.html')
 
-@login_required
+#@login_required
 def bus(request):
     search_query = request.GET.get('search', '')
     sort_by = request.GET.get('sort', '')
@@ -50,7 +51,7 @@ def bus(request):
     context = {'buses': buses}
     return render(request, 'IT/Bus/bus.html', context)
 
-@login_required
+#@login_required
 def JO(request):
     # Get search query from request parameters
     query = request.GET.get('search')
@@ -100,16 +101,16 @@ def JO(request):
     # Pass the queryset and employees to the template
     return render(request, 'IT/JO/JO.html', {'requests': requests, 'employees': employees})
 
-@login_required
+#@login_required
 def AR(request):
     return render(request, 'IT/AR/AR.html')
 
-@login_required
+#@login_required
 def PO(request):
     return render(request, 'IT/PO/PO.html')
 
 
-@login_required
+#@login_required
 def account(request):
     # Get the search query from the GET request
     search_query = request.GET.get('search', '')
@@ -122,7 +123,7 @@ def account(request):
 
     return render(request, 'IT/Accounts/Accounts.html', {'accounts': accounts, 'search': search_query})
 
-@login_required
+#@login_required
 def operational(request):
     # Filter the Operational Manager department
     operational_dept = get_object_or_404(Department, dept_name__iexact="Operational Manager")
@@ -134,7 +135,7 @@ def operational(request):
         {'employee': employees, 'department': operational_dept}
     )
 
-@login_required
+#@login_required
 def it_dep(request):
     it_dept = get_object_or_404(Department, dept_name__iexact="I.T. Department")
     # employees = Employee.objects.filter(dept_id=it_dept)
@@ -146,7 +147,7 @@ def it_dep(request):
         {'employee': employees, 'department': it_dept}
     )
 
-@login_required
+#@login_required
 def transportation(request):
     transportation_dept = get_object_or_404(Department, dept_name__iexact="Transportation Department")
     employees = Employee.objects.filter(dept_id=transportation_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -157,7 +158,7 @@ def transportation(request):
         {'employee': employees, 'department': transportation_dept}
     )
 
-@login_required
+#@login_required
 def vm(request):
     vm_dept = get_object_or_404(Department, dept_name__iexact="Vehicle Maintenance Department")
     employees = Employee.objects.filter(dept_id=vm_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -168,7 +169,7 @@ def vm(request):
         {'employee': employees, 'department': vm_dept}
     )
 
-@login_required
+#@login_required
 def hr(request):
     hr_dept = get_object_or_404(Department, dept_name__iexact="H.R. Department")
     employees = Employee.objects.filter(dept_id=hr_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -179,7 +180,7 @@ def hr(request):
         {'employee': employees, 'department': hr_dept}
     )
 
-@login_required
+#@login_required
 def finance(request):
     finance_dept = get_object_or_404(Department, dept_name__iexact="Finance Department")
     employees = Employee.objects.filter(dept_id=finance_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -190,7 +191,7 @@ def finance(request):
         {'employee': employees, 'department': finance_dept}
     )
 
-@login_required
+#@login_required
 def fuel(request):
     fuel_dept = get_object_or_404(Department, dept_name__iexact="Fuel Department")
     employees = Employee.objects.filter(dept_id=fuel_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -201,7 +202,7 @@ def fuel(request):
         {'employee': employees, 'department': fuel_dept}
     )
 
-@login_required
+#@login_required
 def safety(request):
     safety_dept = get_object_or_404(Department, dept_name__iexact="Safety Department")
     employees = Employee.objects.filter(dept_id=safety_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -212,7 +213,7 @@ def safety(request):
         {'employee': employees, 'department': safety_dept}
     )
 
-@login_required
+#@login_required
 def dispatch(request):
     dispatch_dept = get_object_or_404(Department, dept_name__iexact="Dispatch Department")
     employees = Employee.objects.filter(dept_id=dispatch_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -223,7 +224,7 @@ def dispatch(request):
         {'employee': employees, 'department': dispatch_dept}
     )
 
-@login_required
+#@login_required
 def officer(request):
     officer_dept = get_object_or_404(Department, dept_name__iexact="Officers")
     employees = Employee.objects.filter(dept_id=officer_dept).order_by('emp_fname')  # Sort by last name A-Z
@@ -234,28 +235,7 @@ def officer(request):
         {'employee': employees, 'department': officer_dept}
     )
 
-# @login_required
-# def add_employee(request):
-#     if request.method == 'POST':
-#         form = EmployeeForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             form.save()  # Save the employee data
-#             messages.success(request, 'Employee successfully added!')
-#             return redirect('it:department')  # Redirect to the department page
-            
-#         else:
-#             # Render the same form with error messages
-#             return render(request, 'IT/department/add_employee.html', {
-#                 'form': form,
-#                 'success': False
-#             })
-#     else:
-#         form = EmployeeForm()
-#     return render(request, 'IT/department/add_employee.html', {
-#         'form': form
-#     })
-
-@login_required
+#@login_required
 def add_employee(request):
     errors = {}  # Dictionary to store custom error messages
     if request.method == 'POST':
@@ -288,7 +268,7 @@ def add_employee(request):
         'errors': errors  # Pass errors to the template
     })
 
-@login_required
+#@login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, pk=emp_id)  # Fetch employee by ID or return 404
 
@@ -354,7 +334,7 @@ def edit_employee(request, emp_id):
 
 
 
-@login_required
+#@login_required
 def delete_employee(request, emp_id):
     employee = get_object_or_404(Employee, pk=emp_id)
 
@@ -369,7 +349,7 @@ def delete_employee(request, emp_id):
     messages.success(request, f"Employee {employee.emp_fname} {employee.emp_lname} and associated image have been deleted successfully.")
     return redirect('it:department')  # Adjust this to redirect to the appropriate page
 
-@login_required
+#@login_required
 def add_bus(request):
     if request.method == 'POST':
         form = BusForm(request.POST)
@@ -404,7 +384,7 @@ def add_bus(request):
 #         'form': form
 #     })
 
-@login_required
+#@login_required
 def edit_bus(request, bus_unit_num):
     bus = get_object_or_404(Bus, pk=bus_unit_num)
     if request.method == 'POST':
@@ -468,14 +448,14 @@ def edit_bus(request, bus_unit_num):
 #         'bus': bus
 #     })
 
-@login_required
+#@login_required
 def delete_bus(request, bus_unit_num):
     bus = get_object_or_404(Bus, pk=bus_unit_num)
     bus.delete()
     messages.success(request, f"Bus {bus.bus_license_plate_number} has been deleted successfully.")
     return redirect('it:bus')  # Adjust this to redirect to the appropriate page
 
-@login_required
+#@login_required
 def add_account(request):
     if request.method == 'POST':
         form = AccountsForm(request.POST)
@@ -499,7 +479,7 @@ def add_account(request):
     })
 
 
-@login_required
+#@login_required
 def delete_account(request, username):
     # Fetch the account using the username
     account = get_object_or_404(Accounts, username=username)
@@ -515,7 +495,7 @@ def delete_account(request, username):
     # If the request method is GET, display the confirmation page
     return render(request, 'IT/Accounts/Accounts.html', {'account': account})
 
-@login_required
+#@login_required
 def edit_account(request, username):
     account = get_object_or_404(Accounts, username=username)  # Get the account using the username
     
@@ -539,7 +519,7 @@ def edit_account(request, username):
         'employee_name': employee_name,
     })
 
-@login_required
+#@login_required
 def logout_view(request):
     # Clear the session (log out the user)
     logout(request)
@@ -562,7 +542,7 @@ def logout_view(request):
 #     # Redirect to the login page
 #     return redirect('login:login')
 
-@login_required
+#@login_required
 def it_purchase_odr(request, po_num=None):
     if po_num:
         # View a specific purchase order
@@ -585,7 +565,7 @@ def it_purchase_odr(request, po_num=None):
         }
         return render(request, 'IT/PO/PO.html', context)
 
-@login_required
+#@login_required
 def filter_purchase_orders(request):
     # Get query parameters
     start_date = request.GET.get('start_date', '')  # Retrieve the date filter
@@ -626,7 +606,7 @@ def filter_purchase_orders(request):
 
     return render(request, 'IT/PO/PO.html', context)
 
-@login_required
+#@login_required
 def materials_it(request):
     search_query = request.GET.get('search', '')  # Get the search query from the URL
     category_query = request.GET.get('category', '')  # Get the selected category from the URL

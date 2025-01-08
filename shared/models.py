@@ -4,8 +4,6 @@ from django.contrib.auth.hashers import make_password
 from django.apps import apps
 
 # Create your models here.
-
-
 class Bus(models.Model): 
     bus_unit_num = models.IntegerField(primary_key=True)
     bus_license_plate_number = models.CharField(max_length=10)
@@ -17,7 +15,6 @@ class Bus(models.Model):
     def __str__(self) -> str:
         return str(self.bus_unit_num) if self.bus_unit_num else "No Bus unit num"
     
-
 class Material(models.Model):
     mat_code = models.AutoField(primary_key=True)  
     mat_name = models.CharField(max_length=200)
@@ -25,6 +22,7 @@ class Material(models.Model):
     mat_brand = models.CharField(max_length=200, default='generic') 
     mat_measurement = models.CharField(max_length=200, null=True, blank=True)  
     mat_category = models.ForeignKey('Material_Category',on_delete=models.CASCADE,db_constraint=True)
+    mat_max_request = models.PositiveIntegerField(null=True,blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -146,9 +144,17 @@ class Material_Requested(models.Model):
     mat_req_qty = models.PositiveIntegerField()
     mat_code = models.ForeignKey('Material', on_delete=models.CASCADE, db_constraint=True)
     item_req_num = models.ForeignKey('Item_Request', on_delete=models.CASCADE, db_constraint=True)
+    
+    # Add a status field to track approval status of each material request
+    mat_req_status = models.CharField(max_length=20, choices=[
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Denied', 'Denied')
+    ], default='Pending')
 
     def __str__(self):
         return f"{self.item_req_num} {self.mat_req_qty}"
+
 
 class Item_Request(models.Model):
     IR_STAT_CHOICES = [
@@ -168,15 +174,33 @@ class Item_Request(models.Model):
         return f"{self.item_req_num} {self.mat_req_id}"
 
 class Acknowledgment_Receipt(models.Model):
+    status_choices = [ 
+        ('Pending', 'Pending'),
+        ('Ongoing', 'Ongoing'),
+        ('Delivered', 'Delivered'),
+    ]
     ar_num = models.AutoField(primary_key=True)
     ar_date_made = models.DateTimeField(default=now)
-    ar_date_received = models.DateField()
-    ar_date_receiver = models.ForeignKey(Employee, on_delete=models.CASCADE, db_constraint=True)
+    ar_date_received = models.DateField(null=True, blank=True)
+    ar_date_receiver = models.ForeignKey(Employee, on_delete=models.CASCADE,null=True, blank=True)
+    ar_status = models.CharField(max_length=20,choices=status_choices, default='Pending')
     ar_note = models.TextField()
-    mat_req_id = models.ForeignKey(Material_Requested, on_delete=models.CASCADE, db_constraint=True)
+    item_approved_id = models.ForeignKey('Material_Approved', on_delete=models.CASCADE, db_constraint=True)
     
+class Material_Approved(models.Model):
+    mat_approved_id = models.AutoField(primary_key=True)
+    mat_req_id = models.ForeignKey(Material_Requested, on_delete=models.CASCADE, related_name='approved_materials')
+    ir_num = models.ForeignKey(Item_Request, on_delete=models.CASCADE)
+    mat_approved_qty = models.PositiveIntegerField()  # Approved quantity
+    mat_approved_code = models.ForeignKey(Material, on_delete=models.SET_NULL,null=True,blank=True)  # Material code
+    date_approved = models.DateTimeField(auto_now_add=True)
+    ar_num = models.ForeignKey(Acknowledgment_Receipt, on_delete=models.CASCADE, null=True, blank=True)  
+    is_acknowledged = models.BooleanField(default=False)
+    def __str__(self):
+        return f"Approved Material: {self.mat_approved_code.mat_name} - {self.mat_approved_qty}"
+
 class Accounts(models.Model):
-    user_id = models.OneToOneField(
+    user_id = models.OneToOneField( 
         'Employee', 
         on_delete=models.CASCADE, 
         db_constraint=True, 
@@ -198,3 +222,4 @@ class Accounts(models.Model):
 
     def __str__(self):  
         return f"Username: {self.username}, User ID: {self.user_id}"
+    

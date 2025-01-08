@@ -1,9 +1,56 @@
 {% extends 'finance/base.html' %}
 
 {% block content %}
-    <!-- Horizontal blue bar with text aligned to the left and space added -->
-    <div style="background-color: #294FA2; height: 130px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
+    <!-- Header Section -->
+    <div style="background-color: #294FA2; height: 150px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
         <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">ACKNOWLEDGEMENT RECEIPT</h1>
+        
+        <!-- Create New Acknowledgment Receipt Button -->
+        <a href="{% url 'finance:create_ack_rep' %}" 
+           style="padding: 10px 20px; background-color: #2d6fa0; color: white; border-radius: 5px; text-decoration: none; position: absolute; bottom: 10px; left: 20px; font-size: 16px; font-family: 'Arial', sans-serif;">
+            Create New Acknowledgment Receipt
+        </a>
     </div>
-    
+
+    <!-- Table Section -->
+    <div style="max-width: 1200px; margin: 20px auto; background-color: white; padding: 20px; border-radius: 7px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">Receipt Number</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Note</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Approved Items</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for receipt in receipts %}
+                    <tr>
+                        <!-- Receipt Details -->
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ receipt.ar_num }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ receipt.ar_note }}</td>
+
+                        <!-- Approved Items (Multiple) -->
+                        <td style="border: 1px solid #ddd; padding: 8px;">
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                {% for material in receipt.material_approved_set.all %}
+                                    <li>
+                                        {{ material.mat_approved_code.mat_name }} - 
+                                        Qty: {{ material.mat_approved_qty }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+
+                        <!-- Status -->
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ receipt.ar_status }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 10px;">No acknowledgment receipts available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

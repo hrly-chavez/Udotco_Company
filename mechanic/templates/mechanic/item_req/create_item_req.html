@@ -1,127 +1,176 @@
 {% extends 'mechanic/index.html' %}
 
 {% block content %}
-<div style="background-color: #294FA2; height: 110px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
-    <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">AUTO PARTS ITEM REQUEST</h1>
-    <div style="display: flex; position: absolute; bottom: 10px; right: 20px;">
-        <!-- Search bar -->
-        <form method="GET" action="{% url 'mechanic:view_req' %}">
-            <input 
-                type="text" 
-                name="search" 
-                placeholder="Search..." 
-                style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; width: 250px; height: 40px;" 
-                value="{{ search_query }}"
-            >
-            
-            <!-- Category filter dropdown -->
-            <select name="category" style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; height: 40px; margin-left: 10px;">
-                <option value="">All Categories</option>
-                {% for category in categories %}
-                    <option value="{{ category.mat_category_id }}" {% if category.mat_category_id|stringformat:"s" == selected_category %}selected{% endif %}>
-                        {{ category.mat_name }}
-                    </option>
+<div class="container mt-4">
+    <h1>Request Materials for Job Order: {{ job_order.j_o_number }}</h1>
+
+    <form id="item-request-form" method="POST">
+        {% csrf_token %}
+
+        <div class="form-group mt-3">
+            <label for="approver">Approved By</label>
+            <select id="approver" name="item_req_approved_by" class="form-control">
+                <option value="">Select Approver</option>
+                {% for approver in employees %}
+                    <option value="{{ approver.emp_id }}">{{ approver.emp_fname }} {{ approver.emp_lname }}</option>
                 {% endfor %}
             </select>
-
-            <button type="submit" style="padding: 8px 15px; border-radius: 7px; background-color: #4CAF50; color: white; border: none; height: 40px; margin-left: 10px;">
-                Filter
-            </button>
-        </form>
-    </div>
-</div>
-
-<!-- Table for materials -->
-<div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-        <thead>
-            <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
-                <th>Item Req No.</th>
-                <th>Bus Unit No.</th>
-                <th>Approved By</th>
-                <th>View Details</th>
-                
-            </tr>
-        </thead>
-        <tbody>
-            {% for group in unique_item_requests %}
-            <tr style="font-family: 'Istok Web', sans-serif; font-size: 18px;">
-                <td>{{ group.item_req_num.item_req_num }}</td>
-                <td>{{ group.item_req_num.bus_unit_num.bus_unit_num }}</td>
-                <td>{{ group.item_req_num.item_req_approved_by.emp_fname }} {{ group.item_req_num.item_req_approved_by.emp_lname }}</td>
-                <td>
-                    <button 
-                        class="btn btn-primary view-button" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#viewModal"
-                        data-requests='{{ group.requests|safe }}'
-                    >
-                        View
-                    </button>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4" style="text-align: center;">No Auto Parts Item Requests Available</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% comment %} 
-<!-- Modal -->
-<div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="viewModalLabel">Item Request Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                    <thead>
-                        <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
-                            <th>Material Name</th>
-                            <th>Brand</th>
-                            <th>Category</th>
-                            <th>Quantity</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modal-body"></tbody> <!-- Populated dynamically -->
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
         </div>
+
+        <!-- Bus Unit Number (Read-only) -->
+        <div class="form-group mt-3">
+            <label for="bus_unit_num">Bus Unit</label>
+            <input type="text" id="bus_unit_num" name="bus_unit_num" class="form-control" value="{{ form.bus_unit_num.value }}" readonly>
+        </div>
+
+        <div class="form-group mt-3">
+            <label for="description">Description</label>
+            <textarea id="description" name="item_req_description" class="form-control" placeholder="Enter description"></textarea>
+        </div>
+
+    <div class="form-group mt-3">
+        <label for="status">Status</label>
+        <select id="status" name="item_req_status" class="form-control" disabled>
+            <option value="Waiting" {% if form.item_req_status.initial == 'Waiting' %}selected{% endif %}>Waiting</option>
+            <option value="Ongoing" {% if form.item_req_status.initial == 'Ongoing' %}selected{% endif %}>Ongoing</option>
+            <option value="Done" {% if form.item_req_status.initial == 'Done' %}selected{% endif %}>Done</option>
+        </select>
+    </div>  
+
+
+        <input type="hidden" id="date_requested" name="item_req_date_requested">
+
+        <hr>
+        <h3>Select Materials</h3>
+        <div class="form-group">
+            <label for="material-select">Select Material</label>
+            <select id="material-select" class="form-control select2"></select>
+        </div>
+        {% comment %} NEWWW!! {% endcomment %}
+    <div class="form-group mt-3">
+        <label for="mat-max-request">Maximum Requestable Quantity</label>
+        <input type="text" id="mat-max-request" class="form-control" readonly>
+        <input type="hidden" id="mat-max-request-hidden">
     </div>
-</div> {% endcomment %}
+
+
+        <div class="form-group mt-3">
+            <label for="quantity">Quantity Requested</label>
+            <input type="number" id="quantity" name="quantity" class="form-control" placeholder="Enter quantity">
+        </div>
+        <button type="button" id="add-material" class="btn btn-primary mt-3">Add to Table</button>
+
+        <hr>
+        <h3>Selected Materials</h3>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Material Name</th>
+                    <th>Quantity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="materials-table"></tbody>
+        </table>
+
+        <button type="submit" class="btn btn-success mt-3">Submit Request</button>
+
+        <input type="hidden" name="materials" id="materials-data">
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const viewButtons = document.querySelectorAll('.view-button');
+  $('#material-select').select2({
+    ajax: {
+        url: "{% url 'mechanic:fetch_materials' %}",
+        dataType: 'json',
+        delay: 250,
+        data: function (params) {
+            return { q: params.term };
+        },
+        processResults: function (data) {
+            return { results: data.results };
+        },
+        cache: true
+    },
+    placeholder: "Search for a material",
+    allowClear: true
+});
 
-        viewButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const modalBody = document.getElementById('modal-body');
-                modalBody.innerHTML = ''; // Clear previous data
-                
-                const requests = JSON.parse(button.getAttribute('data-requests'));
+document.getElementById('date_requested').value = new Date().toISOString().split('T')[0];
 
-                requests.forEach(request => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${request.mat_name}</td>
-                        <td>${request.mat_brand}</td>
-                        <td>${request.mat_category}</td>
-                        <td>${request.quantity}</td>
-                        <td>${request.status}</td>
-                    `;
-                    modalBody.appendChild(row);
-                });
-            });
-        });
+let materialsArray = []; // To store added materials
+
+$('#add-material').click(function () {
+    const materialId = $('#material-select').val();
+    const materialText = $('#material-select option:selected').text();
+    const quantity = parseInt($('#quantity').val(), 10); // Parse as an integer
+
+    // Validate material and quantity
+    if (!materialId || quantity <= 0 || isNaN(quantity)) {
+        alert("Please select a material and enter a valid quantity.");
+        return;
+    }
+
+    // Check for duplicates
+    const existingMaterial = materialsArray.find(material => material.material_id === materialId);
+    if (existingMaterial) {
+        alert("This material is already added. Please update the quantity if needed.");
+        return;
+    }
+
+    // Add to materials array
+    materialsArray.push({
+        material_id: materialId,
+        quantity: quantity
     });
+
+    // Add row to the table
+    const row = `
+        <tr data-id="${materialId}">
+            <td>${materialText}</td>
+            <td>${quantity}</td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm remove-material">Remove</button>
+            </td>
+        </tr>
+    `;
+    $('#materials-table').append(row);
+
+    // Reset inputs
+    $('#material-select').val(null).trigger('change');
+    $('#quantity').val('');
+
+    // Update the hidden input field
+    $('#materials-data').val(JSON.stringify(materialsArray));
+});
+
+$(document).on('click', '.remove-material', function () {
+    const materialId = $(this).closest('tr').data('id');
+
+    // Remove material from materialsArray
+    materialsArray = materialsArray.filter(material => material.material_id !== materialId);
+
+    // Remove row from the table
+    $(this).closest('tr').remove();
+
+    // Update the hidden input field
+    $('#materials-data').val(JSON.stringify(materialsArray));
+});
+
+$('form').submit(function (event) {
+    // Ensure at least one material is added
+    if (materialsArray.length === 0) {
+        alert("Please add at least one material.");
+        event.preventDefault();
+    }
+});
+
 </script>
+
 {% endblock %}
+

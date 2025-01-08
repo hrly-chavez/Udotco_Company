@@ -5,19 +5,21 @@ from shared.models import *
 class MaterialForm(forms.ModelForm):
     class Meta:
         model = Material
-        fields = ['mat_name', 'mat_quantity', 'mat_brand', 'mat_measurement', 'mat_category']
+        fields = ['mat_name', 'mat_quantity', 'mat_brand', 'mat_measurement', 'mat_category','mat_max_request']
         labels = {
             'mat_name' : 'Name',
             'mat_quantity' : 'Quantity',
             'mat_brand' :   'Brand',
             'mat_measurement' : 'Measurement',
             'mat_category' : 'Category',
+            'mat_max_request': 'Max Requestion',
         }
         widgets = {
             'mat_measurement': forms.TextInput(attrs={'placeholder': 'Optional: Measurement'}),
             'mat_name': forms.TextInput(attrs={'placeholder': 'Enter material name'}),
             'mat_quantity': forms.NumberInput(attrs={'placeholder': 'Enter quantity'}),
-            'mat_category': forms.Select(attrs={'placeholder': 'Select Material Category'}), 
+            'mat_category': forms.Select(attrs={'placeholder': 'Select Material Category'}),
+            'mat_max_request': forms.NumberInput(attrs={'placeholder':'Optional: Enter Value for Max Requesition'}) 
         }
 
     def clean_mat_quantity(self):
@@ -84,3 +86,36 @@ class PurchaseOrderForm(forms.ModelForm):
 
 class DateFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+
+
+class MaterialRequestApprovalForm(forms.ModelForm):
+    class Meta:
+        model = Material_Requested
+        fields = ['mat_req_qty', 'mat_code']  
+
+class AcknowledgmentReceiptForm(forms.ModelForm):
+    item_approved_id = forms.ModelChoiceField(
+        queryset=Material_Approved.objects.select_related('mat_approved_code'),
+        widget=forms.Select(attrs={'class': 'form-control select2'}),
+        label="Approved Item"
+    )
+
+    class Meta:
+        model = Acknowledgment_Receipt
+        fields = ['ar_note', 'item_approved_id']  # Exclude ar_date_received, ar_date_receiver, and ar_status
+        labels = {
+            'ar_note': 'Note',
+            'item_approved_id': 'Approved Item',
+        }
+        widgets = {
+            'ar_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['item_approved_id'].queryset = Material_Approved.objects.filter(
+            mat_req_id__mat_req_status='Approved'  # Ensure this condition matches your approval logic
+        ).select_related('mat_approved_code')
+        self.fields['item_approved_id'].label_from_instance = lambda obj: f"{obj.mat_approved_code.mat_name} - Quantity: {obj.mat_approved_qty}"
+
+

@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'Udotco.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Udotco2',
+        'NAME': 'udotco',
         'USER': 'postgres',
         'PASSWORD': '123456',
         'HOST': 'localhost',
@@ -145,3 +145,6 @@ AUTH_PASSWORD_MODEL = 'auth.User'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+
