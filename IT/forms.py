@@ -2,6 +2,32 @@ from django import forms
 from shared.models import *
 from django.core.exceptions import ValidationError
 
+# class EmployeeForm(forms.ModelForm):  # For adding employees
+#     class Meta:
+#         model = Employee
+#         fields = [
+#             'emp_fname', 'emp_lname', 'emp_initial', 'emp_suffix',
+#             'emp_date_of_birth', 'emp_sex', 'emp_address',
+#             'emp_contact_num', 'emp_role', 'dept_id', 'emp_image'
+#         ]
+#         widgets = {
+#             'emp_fname': forms.TextInput(attrs={'placeholder': 'Enter first name'}),
+#             'emp_lname': forms.TextInput(attrs={'placeholder': 'Enter last name'}),
+#             'emp_initial': forms.TextInput(attrs={'placeholder': 'Optional: Middle Initial'}),
+#             'emp_suffix': forms.TextInput(attrs={'placeholder': 'Optional: Suffix'}),
+#             'emp_date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+#             'emp_sex': forms.Select(choices=[
+#                 ('', 'Select...'),
+#                 ('Male', 'Male'),
+#                 ('Female', 'Female')
+#             ]),
+#             'emp_address': forms.TextInput(attrs={'placeholder': 'Enter address'}),
+#             'emp_contact_num': forms.TextInput(attrs={'placeholder': 'Enter contact number'}),
+#             'emp_role': forms.TextInput(attrs={'placeholder': 'Optional: Role'}),
+#             'dept_id': forms.Select(attrs={'placeholder': 'Select department'}),
+#             'emp_image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+#         }
+
 class EmployeeForm(forms.ModelForm):  # For adding employees
     class Meta:
         model = Employee
@@ -15,7 +41,13 @@ class EmployeeForm(forms.ModelForm):  # For adding employees
             'emp_lname': forms.TextInput(attrs={'placeholder': 'Enter last name'}),
             'emp_initial': forms.TextInput(attrs={'placeholder': 'Optional: Middle Initial'}),
             'emp_suffix': forms.TextInput(attrs={'placeholder': 'Optional: Suffix'}),
-            'emp_date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'emp_date_of_birth': forms.DateInput(
+                attrs={
+                    'type': 'date',
+                    'onfocus': "setDefaultDate(this)"  # Add a JavaScript function
+                }
+            ),
+
             'emp_sex': forms.Select(choices=[
                 ('', 'Select...'),
                 ('Male', 'Male'),
@@ -55,6 +87,11 @@ class BusForm(forms.ModelForm):
 
     def clean_bus_unit_num(self):
         bus_unit_num = self.cleaned_data.get('bus_unit_num')
+        
+        # Check for negative bus unit number
+        if bus_unit_num is not None and bus_unit_num < 0:
+            raise ValidationError("Bus Unit Number cannot be negative.")
+        
         if not self.instance.pk:
             # Adding a new bus, ensure uniqueness
             if Bus.objects.filter(bus_unit_num=bus_unit_num).exists():
@@ -63,6 +100,7 @@ class BusForm(forms.ModelForm):
             # Editing, ensure uniqueness excluding current instance
             if Bus.objects.filter(bus_unit_num=bus_unit_num).exclude(pk=self.instance.pk).exists():
                 raise ValidationError("Bus Unit Number must be unique.")
+        
         return bus_unit_num
 
     def clean(self):
@@ -72,12 +110,18 @@ class BusForm(forms.ModelForm):
             # Skip uniqueness check for bus_unit_num if editing
             cleaned_data.pop('bus_unit_num', None)
 
+        # Check for negative numbers in bus_year_model or other fields if needed
+        bus_year_model = cleaned_data.get('bus_year_model')
+
+        if bus_year_model and bus_year_model < 0:
+            self.add_error('bus_year_model', "Bus Year Model cannot be negative.")
+
         license_plate = cleaned_data.get('bus_license_plate_number')
         chassis_num = cleaned_data.get('bus_chassis_num')
         engine_num = cleaned_data.get('bus_engine_num')
         tag_num = cleaned_data.get('bus_tag_num')
 
-        # Check for uniqueness
+        # Check for uniqueness of other fields
         if license_plate and Bus.objects.filter(bus_license_plate_number=license_plate).exclude(pk=self.instance.pk).exists():
             self.add_error('bus_license_plate_number', "License Plate Number must be unique.")
         if chassis_num and Bus.objects.filter(bus_chassis_num=chassis_num).exclude(pk=self.instance.pk).exists():
@@ -87,7 +131,7 @@ class BusForm(forms.ModelForm):
         if tag_num and Bus.objects.filter(bus_tag_num=tag_num).exclude(pk=self.instance.pk).exists():
             self.add_error('bus_tag_num', "Tag Number must be unique.")
 
-        return cleaned_data 
+        return cleaned_data
 
 
 class AccountsForm(forms.ModelForm):

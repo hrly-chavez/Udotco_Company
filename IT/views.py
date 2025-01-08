@@ -22,12 +22,6 @@ def login_required(view_func):
     return wrapper
 
 @login_required
-def IT(request):
-    # buses = Bus.objects.all()
-    # return render(request, 'IT/index.html', {'buses': buses})
-    return render(request, 'IT/department/department.html')
-
-@login_required
 def department(request):
     return render(request, 'IT/department/department.html')
 
@@ -55,20 +49,6 @@ def bus(request):
 
     context = {'buses': buses}
     return render(request, 'IT/Bus/bus.html', context)
-
-# def JO(request):
-#     # return render(request, 'IT/JO/JO.html')
-#     query = request.GET.get('search')  # Get search query from request parameters
-
-#     if query:
-#         # Filter job orders by date containing the search query
-#         requests = JobOrder.objects.filter(j_o_date_requested__icontains=query)
-#     else:
-#         # Retrieve all job orders if no search query
-#         requests = JobOrder.objects.all()
-
-#     # Pass the queryset to the template
-#     return render(request, 'IT/JO/JO.html', {'requests': requests})
 
 @login_required
 def JO(request):
@@ -128,11 +108,6 @@ def AR(request):
 def PO(request):
     return render(request, 'IT/PO/PO.html')
 
-# def account(request):
-#     # # Get all accounts from the database
-#     accounts = Accounts.objects.all()
-
-#     return render(request, 'IT/Accounts/Accounts.html', {'accounts': accounts})
 
 @login_required
 def account(request):
@@ -259,53 +234,125 @@ def officer(request):
         {'employee': employees, 'department': officer_dept}
     )
 
+# @login_required
+# def add_employee(request):
+#     if request.method == 'POST':
+#         form = EmployeeForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             form.save()  # Save the employee data
+#             messages.success(request, 'Employee successfully added!')
+#             return redirect('it:department')  # Redirect to the department page
+            
+#         else:
+#             # Render the same form with error messages
+#             return render(request, 'IT/department/add_employee.html', {
+#                 'form': form,
+#                 'success': False
+#             })
+#     else:
+#         form = EmployeeForm()
+#     return render(request, 'IT/department/add_employee.html', {
+#         'form': form
+#     })
+
 @login_required
 def add_employee(request):
+    errors = {}  # Dictionary to store custom error messages
     if request.method == 'POST':
         form = EmployeeForm(request.POST, request.FILES)
-        if form.is_valid():
-            new_employee = form.save()  # This will automatically handle the save process
-            return render(request, 'IT/department/add_employee.html', {
-                'form': EmployeeForm(),
-                'success': True
-            })
+
+        # Custom validation for Middle Initial
+        emp_initial = request.POST.get('emp_initial', '').strip()
+        if emp_initial and not emp_initial.isalpha():
+            errors['emp_initial'] = "Middle Initial should contain only letters."
+
+        # Custom validation for Contact Number
+        emp_contact_num = request.POST.get('emp_contact_num', '').strip()
+        if emp_contact_num and not emp_contact_num.isdigit():
+            errors['emp_contact_num'] = "Contact Number should contain only numbers."
+
+        # If the form is valid and there are no custom errors, save the form
+        if form.is_valid() and not errors:
+            form.save()
+            messages.success(request, 'Employee successfully added!')
+            return redirect('it:department')
         else:
-            return render(request, 'IT/department/add_employee.html', {
-                'form': form,
-                'success': False
-            })
+            # Add errors from the form to the error dictionary
+            errors.update(form.errors)
+
     else:
         form = EmployeeForm()
-    
+
     return render(request, 'IT/department/add_employee.html', {
-        'form': form
+        'form': form,
+        'errors': errors  # Pass errors to the template
     })
 
 @login_required
 def edit_employee(request, emp_id):
     employee = get_object_or_404(Employee, pk=emp_id)  # Fetch employee by ID or return 404
+
     if request.method == 'POST':
         form = EmployeeForm(request.POST, request.FILES, instance=employee)  # Bind data to form
-        if form.is_valid():
+
+        # Initialize a flag to track custom validation errors
+        custom_error_flag = False
+
+        # Custom validation for Middle Initial
+        emp_initial = request.POST.get('emp_initial', '').strip()
+        if emp_initial and not emp_initial.isalpha():
+            form.add_error('emp_initial', "Middle Initial should contain only letters.")
+            custom_error_flag = True
+
+        # Custom validation for Contact Number
+        emp_contact_num = request.POST.get('emp_contact_num', '').strip()
+        if emp_contact_num and not emp_contact_num.isdigit():
+            form.add_error('emp_contact_num', "Contact Number should contain only numbers.")
+            custom_error_flag = True
+
+        # Validate form and check for custom validation errors
+        if form.is_valid() and not custom_error_flag:
             form.save()  # Save changes to the employee instance
             messages.success(request, "Employee details updated successfully!")
-            # return redirect('it:department')  # Redirect to the operational manager page
+            return redirect('it:department')  # Redirect to the operational manager page
         else:
-            messages.error(request, "Please correct the errors below.")
+            # Instead of a generic message, show specific field errors
+            for errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
     else:
         form = EmployeeForm(instance=employee)  # Populate form with existing employee data
 
     return render(request, 'IT/department/edit_employee.html', {
         'form': form,
         'edit_mode': True,  # Pass a flag to indicate edit mode
-        'employee': employee
+        'employee': employee,
+        'hide_messages': True
     })
 
-# def delete_employee(request, emp_id):
-#     employee = get_object_or_404(Employee, pk=emp_id)
-#     employee.delete()
-#     messages.success(request, f"Employee {employee.emp_fname} {employee.emp_lname} has been deleted successfully.")
-#     return redirect('department')  # Adjust this to redirect to the appropriate page
+
+
+# @login_required
+# def edit_employee(request, emp_id):
+#     employee = get_object_or_404(Employee, pk=emp_id)  # Fetch employee by ID or return 404
+#     if request.method == 'POST':
+#         form = EmployeeForm(request.POST, request.FILES, instance=employee)  # Bind data to form
+#         if form.is_valid():
+#             form.save()  # Save changes to the employee instance
+#             messages.success(request, "Employee details updated successfully!")
+#             return redirect('it:department')  # Redirect to the operational manager page
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = EmployeeForm(instance=employee)  # Populate form with existing employee data
+
+#     return render(request, 'IT/department/edit_employee.html', {
+#         'form': form,
+#         'edit_mode': True,  # Pass a flag to indicate edit mode
+#         'employee': employee
+#     })
+
+
 
 @login_required
 def delete_employee(request, emp_id):

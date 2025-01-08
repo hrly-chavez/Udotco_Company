@@ -8,16 +8,16 @@
         </h1>
     </div>
 
-    <!-- Success and Error Messages -->
-    <div style="max-width: 900px; margin: 40px auto;">
-        {% if messages %}
+    {% if messages and not hide_messages %}
+        <div class="messages">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">
+                <div class="alert alert-{{ message.tags }}" style="margin: 10px 0;">
                     {{ message }}
                 </div>
             {% endfor %}
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
+
 
     <!-- Employee Form Container -->
     <div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 900px; margin: 40px auto; border-radius: 7px;">
@@ -52,6 +52,9 @@
                         <div class="form-group">
                             <label for="id_emp_initial" class="form-label mt-4">Middle Initial</label>
                             {{ form.emp_initial }}
+                            {% if form.emp_initial.errors %}
+                                <p style="color: red;">{{ form.emp_initial.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -96,6 +99,9 @@
                         <div class="form-group">
                             <label for="id_emp_contact_num" class="form-label mt-4">Contact Number</label>
                             {{ form.emp_contact_num }}
+                            {% if form.emp_contact_num.errors %}
+                                <p style="color: red;">{{ form.emp_contact_num.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

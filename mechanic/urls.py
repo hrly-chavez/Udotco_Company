@@ -5,7 +5,7 @@ from . import views
 app_name = 'mechanic'
 
 urlpatterns = [
-    path( '', views.joborder_list, name='joborder_list'),
+    path( 'mechanic/', views.joborder_list, name='joborder_list'),
     path('joborder-list/', views.joborder_list, name='joborder_list'),
     path('update-job-status/', views.update_job_status, name='update_job_status'),
     path('logout/', views.logout_view, name='logout'),

@@ -8,19 +8,10 @@
 
     <!-- Centered Form Container -->
     <div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 900px; margin: 40px auto; border-radius: 7px;">
-        <!-- Success message -->
-        {% if success %}
-            <div class="alert alert-success text-center" role="alert">
-                Employee added successfully!
-            </div>
-        {% endif %}
 
         <!-- Display form errors -->
-        {% if form.errors %}
-            <div class="alert alert-danger text-center" role="alert">
-                Please correct the errors below.
-            </div>
-        {% endif %}
+    
+
 
         <!-- Employee Form -->
         <form method="POST" enctype="multipart/form-data">
@@ -52,6 +43,9 @@
                         <div class="form-group">
                             <label for="id_emp_initial" class="form-label mt-4">Middle Initial</label>
                             {{ form.emp_initial }}
+                            {% if errors.emp_initial %}
+                                <p style="color: red;">{{ errors.emp_initial }}</p>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -96,6 +90,9 @@
                         <div class="form-group">
                             <label for="id_emp_contact_num" class="form-label mt-4">Contact Number</label>
                             {{ form.emp_contact_num }}
+                            {% if errors.emp_contact_num %}
+                                <p style="color: red;">{{ errors.emp_contact_num }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -140,4 +137,15 @@
             <a href="{% url 'it:department' %}" class="btn btn-secondary btn-lg">Back to Departments</a>
         </div>
     </div>
+
+    <script>
+        function setDefaultDate(element) {
+            if (!element.value) {
+                const today = new Date();
+                const defaultDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                const formattedDate = defaultDate.toISOString().split('T')[0];
+                element.value = formattedDate;
+            }
+        }
+    </script>
 {% endblock %}

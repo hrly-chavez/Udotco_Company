@@ -4,7 +4,7 @@ from . import views
 app_name='finance'
 
 urlpatterns = [
-    path('', views.mechanic_req, name = 'mechanic_req'),
+    path('finance/', views.mechanic_req, name = 'mechanic_req'),
     path('mechanic request/', views.mechanic_req, name = 'mechanic_req'),
     path('acknowledgement report/', views.ack_rep, name = 'ack_rep'),
     
