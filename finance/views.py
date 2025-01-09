@@ -11,6 +11,8 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.db import transaction
 import json
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 def finance(request):
@@ -118,23 +120,22 @@ def mechanic_req(request):
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
 
+
+@csrf_exempt
 def approve_material(request, mat_req_id):
     if request.method == "POST":
         try:
-            # Fetch material request
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Check if already approved
             if material_request.mat_req_status == 'Approved':
                 return JsonResponse({'success': False, 'error': 'Material already approved'})
 
-            # Use a transaction
             with transaction.atomic():
-                # Update status to approved
+                # Update status to 'Approved'
                 material_request.mat_req_status = 'Approved'
                 material_request.save()
 
-                # Create Material_Approved entry
+                # Create a record in Material_Approved
                 Material_Approved.objects.create(
                     mat_req_id=material_request,
                     ir_num=material_request.item_req_num,
@@ -142,14 +143,14 @@ def approve_material(request, mat_req_id):
                     mat_approved_code=material_request.mat_code,
                 )
 
-                # Update item request status dynamically
+                # Call a method to update the status of the request
                 material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
 def deny_material(request, mat_req_id):
     if request.method == "POST":
