@@ -29,7 +29,7 @@ urlpatterns = [
 
 #_________________________________________ACKNOWLEDGE RECEIPT_____________________________________________
     path('ack-rep/', views.ack_rep, name='ack_rep'),
-    path('create-ack-rep/', views.create_ack_rep, name='create_ack_rep'),
+
 #_________________________________________________________________________________________________________
     path('logout/', views.logout_view, name='logout'),
     

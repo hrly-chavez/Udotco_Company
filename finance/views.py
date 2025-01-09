@@ -124,23 +124,26 @@ def approve_material(request, mat_req_id):
             # Fetch material request
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Check if the material is already approved
+            # Check if already approved
             if material_request.mat_req_status == 'Approved':
                 return JsonResponse({'success': False, 'error': 'Material already approved'})
 
-            # Use a transaction to ensure atomicity
+            # Use a transaction
             with transaction.atomic():
-                # Update only the material request status
+                # Update status to approved
                 material_request.mat_req_status = 'Approved'
                 material_request.save()
 
-                # Create a new Material_Approved entry
+                # Create Material_Approved entry
                 Material_Approved.objects.create(
                     mat_req_id=material_request,
                     ir_num=material_request.item_req_num,
                     mat_approved_qty=material_request.mat_req_qty,
                     mat_approved_code=material_request.mat_code,
                 )
+
+                # Update item request status dynamically
+                material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
@@ -151,17 +154,24 @@ def approve_material(request, mat_req_id):
 def deny_material(request, mat_req_id):
     if request.method == "POST":
         try:
-            # Fetch material request
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Delete the material request entry
-            material_request.delete()
+            if material_request.mat_req_status == 'Denied':
+                return JsonResponse({'success': False, 'error': 'Material already denied'})
+
+            with transaction.atomic():
+                material_request.mat_req_status = 'Denied'
+                material_request.save()
+
+                # Update item request status dynamically
+                material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 
 #____________________________________PURCHASE ORDER________________________________________________________
 
@@ -338,56 +348,6 @@ def ack_rep(request):
     return render(request, 'finance/ack_rep/ack_rep.html', {'receipts': receipts})
 
 
-
-# def create_ack_rep(request):
-#     if request.method == 'POST':
-#         form = AcknowledgmentReceiptForm(request.POST)
-
-#         if form.is_valid():
-#             try:
-#                 with transaction.atomic():  # Use atomic transaction for rollback support
-#                     # Save acknowledgment receipt
-#                     acknowledgment_receipt = form.save()
-
-#                     # Process and validate selected materials
-#                     selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
-#                     for material_data in selected_materials:
-#                         material_approved = Material_Approved.objects.get(pk=material_data['id'])
-#                         material = material_approved.mat_approved_code  # Get linked Material object
-
-#                         # Check if enough quantity is available in inventory
-#                         if material.mat_quantity < material_approved.mat_approved_qty:
-#                             raise ValueError(f"Not enough stock for {material.mat_name}. Available: {material.mat_quantity}, Required: {material_approved.mat_approved_qty}")
-
-#                         # Deduct the approved quantity from inventory
-#                         material.mat_quantity -= material_approved.mat_approved_qty
-#                         material.save()
-
-#                         # Link material to acknowledgment receipt
-#                         material_approved.ar_num = acknowledgment_receipt
-#                         material_approved.save()
-
-#                     # Redirect on success
-#                     messages.success(request, "Acknowledgment receipt created successfully!")
-#                     return redirect('finance:ack_rep')
-
-#             except ValueError as e:
-#                 # Handle stock errors and rollback changes
-#                 messages.error(request, str(e))  # Show error message
-#                 transaction.rollback()  # Explicitly rollback if needed
-
-#             except Exception as e:
-#                 # Catch any other unexpected errors
-#                 messages.error(request, f"An error occurred: {e}")
-#                 transaction.rollback()
-
-#         else:
-#             messages.error(request, "Invalid form data. Please check the inputs.")
-
-#     else:
-#         form = AcknowledgmentReceiptForm()
-
-#     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
 
 def create_ack_rep(request):
     if request.method == 'POST':

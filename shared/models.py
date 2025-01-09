@@ -172,6 +172,16 @@ class Item_Request(models.Model):
     
     def __str__(self):
         return f"{self.item_req_num} {self.mat_req_id}"
+    def update_status(self):
+        material_requests = self.material_requested_set.all()  # Fetch related materials
+
+        if all(mat.mat_req_status in ['Approved', 'Denied'] for mat in material_requests):
+            self.item_req_status = 'Done'
+        elif any(mat.mat_req_status in ['Approved', 'Denied'] for mat in material_requests):
+            self.item_req_status = 'Ongoing'
+        else:
+            self.item_req_status = 'Waiting'
+        self.save()
 
 class Acknowledgment_Receipt(models.Model):
     status_choices = [ 

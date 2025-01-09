@@ -29,9 +29,6 @@ class MaterialForm(forms.ModelForm):
         return mat_quantity
     
     
-
-
-
 class MaterialOrderForm(forms.ModelForm):
     class Meta:
         model = Material_Order

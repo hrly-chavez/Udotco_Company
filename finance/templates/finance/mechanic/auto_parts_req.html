@@ -71,12 +71,13 @@ function approveMaterial(matReqId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove the approved row from the table
+                // Refresh status column in the row
                 const row = document.getElementById(`row-${matReqId}`);
                 if (row) {
-                    row.remove();  // Remove the row from the table
-                    alert("Material approved successfully!");
+                    row.cells[9].innerText = 'Ongoing'; // Update status cell to "Ongoing"
+                    row.remove(); // Remove the row from the table
                 }
+                alert("Material approved successfully!");
             } else {
                 alert("Failed to approve material: " + (data.error || "Unknown error"));
             }
@@ -100,9 +101,12 @@ function denyMaterial(matReqId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove the denied row from the table
+                // Refresh status column in the row
                 const row = document.getElementById(`row-${matReqId}`);
-                if (row) row.remove();  // Remove the denied row from the table
+                if (row) {
+                    row.cells[9].innerText = 'Ongoing'; // Update status cell to "Ongoing"
+                    row.remove(); // Remove the row from the table
+                }
                 alert("Material denied successfully!");
             } else {
                 alert("Failed to deny material: " + (data.error || "Unknown error"));
@@ -114,30 +118,7 @@ function denyMaterial(matReqId) {
         });
     }
 }
+
 </script>
-    <!-- function approveMaterial(matReqId) {
-        if (confirm("Are you sure you want to approve this item?")) {
-            fetch(`/finance/approve-material/${matReqId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const row = document.getElementById(`row-${matReqId}`);
-                    if (row) row.remove();
-                    alert("Material approved successfully!");
-                } else {
-                    alert("Failed to approve material: " + (data.error || "Unknown error"));
-                }
-            })
-            .catch(error => {
-                alert("An error occurred: " + error.message);
-                console.error("Error:", error);
-            });
-        }
-    } -->
+
 {% endblock %}
