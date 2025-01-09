@@ -4,7 +4,7 @@ from . import views
 app_name='finance'
 
 urlpatterns = [
-    path('', views.mechanic_req, name = 'mechanic_req'),
+    path('finance/', views.mechanic_req, name = 'mechanic_req'),
     path('mechanic request/', views.mechanic_req, name = 'mechanic_req'),
     path('itemreq/', views.mechanic_req, name='itemreq'),
     path('approve-material/<int:mat_req_id>/', views.approve_material, name='approve_material'),
@@ -29,7 +29,7 @@ urlpatterns = [
 
 #_________________________________________ACKNOWLEDGE RECEIPT_____________________________________________
     path('ack-rep/', views.ack_rep, name='ack_rep'),
-
+    path('create-ack-rep/', views.create_ack_rep, name='create_ack_rep'),
 #_________________________________________________________________________________________________________
     path('logout/', views.logout_view, name='logout'),
     
