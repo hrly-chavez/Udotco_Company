@@ -28,6 +28,12 @@ class ItemRequestForm(forms.ModelForm):
             'bus_unit_num': forms.Select(attrs={'class': 'form-select', 'disabled': 'disabled'}),  # Disabled for read-only
         }
 
+    # Customize the field to allow it to be optional
+    item_req_approved_by = forms.ModelChoiceField(
+        queryset=Employee.objects.all(),
+        required=False,  # Make this field optional
+    )
+
     def __init__(self, *args, **kwargs):
         job_order = kwargs.pop('job_order', None)
         super(ItemRequestForm, self).__init__(*args, **kwargs)

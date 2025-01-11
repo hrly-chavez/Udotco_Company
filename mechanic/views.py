@@ -48,35 +48,73 @@ def joborder_list(request):
         'employees': vehicle_maintenance_employees,
     })
 
+
+
 @csrf_exempt
 def update_job_status(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        job_order_id = data.get('job_order_id')
-        next_status = data.get('next_status')
-        assigned_mechanic = data.get('assigned_mechanic', None)
+        job_order_id = data.get("job_order_id")
+        next_status = data.get("next_status")
+        assigned_mechanic_id = data.get("assigned_mechanic")
 
-        try:
-            job_order = JobOrder.objects.get(j_o_number=job_order_id)
+        if not job_order_id or not next_status:
+            return JsonResponse({"success": False, "error": "Invalid data."})
 
-            # Assign mechanic if applicable
-            if next_status == "Ongoing" and assigned_mechanic:
-                mechanic = Employee.objects.get(emp_id=assigned_mechanic)
-                job_order.j_o_checked_by = mechanic
+        job_order = get_object_or_404(JobOrder, j_o_number=job_order_id)
+        
+        # Update status
+        job_order.j_o_status = next_status
 
-            # Update status and date completed
-            job_order.j_o_status = next_status
-            if next_status == "Done":
-                job_order.j_o_date_completed = now()
+        # Handle assigned mechanic
+        if assigned_mechanic_id:
+            mechanic = get_object_or_404(Employee, emp_id=assigned_mechanic_id)
+            job_order.j_o_checked_by = mechanic
+            # Create or update Item_Request
+            item_request, created = Item_Request.objects.get_or_create(
+                job_order=job_order,
+                defaults={
+                    "item_req_approved_by": mechanic,
+                    "bus_unit_num": job_order.j_o_bus_unit_num,
+                },
+            )
+            if not created:
+                item_request.item_req_approved_by = mechanic
+                item_request.save()
+
+        job_order.save()
+        return JsonResponse({"success": True, "message": f"Job Order {job_order_id} updated to {next_status}."})
+
+    return JsonResponse({"success": False, "error": "Invalid request method."})
+# @csrf_exempt
+# def update_job_status(request):
+#     if request.method == "POST":
+#         data = json.loads(request.body)
+#         job_order_id = data.get('job_order_id')
+#         next_status = data.get('next_status')
+#         assigned_mechanic = data.get('assigned_mechanic', None)
+
+#         try:
+#             job_order = JobOrder.objects.get(j_o_number=job_order_id)
+
+#             # Assign mechanic if applicable
+#             if next_status == "Ongoing" and assigned_mechanic:
+#                 mechanic = Employee.objects.get(emp_id=assigned_mechanic)
+#                 job_order.j_o_checked_by = mechanic
+
+#             # Update status and date completed
+#             job_order.j_o_status = next_status
+#             if next_status == "Done":
+#                 job_order.j_o_date_completed = now()
             
-            job_order.save()
-            return JsonResponse({'success': True, 'message': 'Status updated successfully.'})
-        except JobOrder.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Job Order not found.'})
-        except Employee.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Mechanic not found.'})
+#             job_order.save()
+#             return JsonResponse({'success': True, 'message': 'Status updated successfully.'})
+#         except JobOrder.DoesNotExist:
+#             return JsonResponse({'success': False, 'error': 'Job Order not found.'})
+#         except Employee.DoesNotExist:
+#             return JsonResponse({'success': False, 'error': 'Mechanic not found.'})
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+#     return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
 def assign_mat_used(request, item_req_num):
     # Fetch the item request details
@@ -235,8 +273,16 @@ def view_item_requests(request):
 
 
 def create_item_req(request, job_order_id):
+    # Fetch job order and employees
     job_order = get_object_or_404(JobOrder, pk=job_order_id)
     vehicle_maintenance_employees = Employee.objects.filter(dept_id__dept_name="Vehicle Maintenance Department")
+
+    # Get the mechanic_id from the URL query parameters
+    mechanic_id = request.GET.get('mechanic_id', None)
+    if mechanic_id:
+        assigned_mechanic = get_object_or_404(Employee, emp_id=mechanic_id)
+    else:
+        assigned_mechanic = None
 
     if request.method == "POST":
         form = ItemRequestForm(request.POST, job_order=job_order)
@@ -277,6 +323,8 @@ def create_item_req(request, job_order_id):
                 job_order.j_o_status = "Ongoing"
                 if request.POST.get("item_req_approved_by"):
                     job_order.j_o_checked_by = Employee.objects.get(emp_id=request.POST["item_req_approved_by"])
+                if assigned_mechanic:
+                    job_order.j_o_assigned_mechanic = assigned_mechanic
                 job_order.save()
 
                 return redirect('mechanic:joborder_list')
@@ -292,10 +340,26 @@ def create_item_req(request, job_order_id):
 
     return render(request, 'mechanic/item_req/create_item_req.html', {
         'job_order': job_order,
+        'assigned_mechanic': assigned_mechanic,
         'employees': vehicle_maintenance_employees,
         'form': form,
     })
 
+
+def assign_mechanic(request, job_number):
+    if request.method == 'POST':
+        mechanic_id = request.POST.get('j_o_checked_by')
+        job_order = get_object_or_404(JobOrder, j_o_number=job_number)
+
+        if mechanic_id:
+            mechanic = get_object_or_404(Employee, emp_id=mechanic_id)
+            job_order.j_o_checked_by = mechanic
+            job_order.save()
+            messages.success(request, f'Mechanic {mechanic.emp_fname} {mechanic.emp_lname} assigned successfully!')
+        else:
+            messages.error(request, 'No mechanic selected.')
+
+    return redirect('mechanic:joborder_list_view')  # Replace with the URL name for your job order list view
 
 
 # __________________________________________INVENTORY_________________________________________________________

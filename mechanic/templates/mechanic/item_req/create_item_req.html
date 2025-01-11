@@ -6,16 +6,25 @@
 
     <form id="item-request-form" method="POST">
         {% csrf_token %}
-
         <div class="form-group mt-3">
             <label for="approver">Approved By</label>
-            <select id="approver" name="item_req_approved_by" class="form-control">
-                <option value="">Select Approver</option>
-                {% for approver in employees %}
-                    <option value="{{ approver.emp_id }}">{{ approver.emp_fname }} {{ approver.emp_lname }}</option>
-                {% endfor %}
-            </select>
+            {% if assigned_mechanic %}
+                <!-- Readonly display for assigned mechanic -->
+                <input type="text" id="approver" class="form-control" value="{{ assigned_mechanic.emp_fname }} {{ assigned_mechanic.emp_lname }}" readonly>
+            {% else %}
+                <!-- Dropdown for selecting a mechanic -->
+                <select id="approver" name="item_req_approved_by" class="form-control">
+                    {% for approver in employees %}
+                        <option value="{{ approver.emp_id }}" 
+                                {% if approver.emp_id == job_order.j_o_checked_by.emp_id %}selected{% endif %}>
+                            {{ approver.emp_fname }} {{ approver.emp_lname }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
         </div>
+        
+        
 
         <!-- Bus Unit Number (Read-only) -->
         <div class="form-group mt-3">

@@ -23,6 +23,7 @@ urlpatterns = [
     path('fetch_materials/', views.fetch_materials, name='fetch_materials'),
     path('assign-mat-used/<str:item_req_num>/', views.assign_mat_used, name='assign_mat_used'),
     path('assign-material/<int:item_req_num>/', views.assign_material_to_job_order, name='assign_material_to_job_order'),
+    path('assign-mechanic/<int:job_number>/', views.assign_mechanic, name='assign_mechanic'),
 
     # __________________________________________INVENTORY_________________________________________________________
     path('inventory/', views.inventory, name='inventory'),

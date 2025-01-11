@@ -14,19 +14,19 @@ from datetime import datetime
 
 # Create your views here.
 
-# def login_required(view_func):
-#     def wrapper(request, *args, **kwargs):
-#         if 'user_id' not in request.session:
-#             return redirect('login:login')  # Redirect to login page if not logged in
-#         return view_func(request, *args, **kwargs)
-#     return wrapper
+def login_required(view_func):
+    def wrapper(request, *args, **kwargs):
+        if 'user_id' not in request.session:
+            return redirect('login:login')  # Redirect to login page if not logged in
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 #_____________________________________DEPARTMENT_________________________________________
-#@login_required
+# @login_required
 def department(request):
     return render(request, 'IT/department/department.html')
 
-#@login_required
+# @login_required
 def operational(request):
     # Filter the Operational Manager department
     operational_dept = get_object_or_404(Department, dept_name__iexact="Operational Manager")
@@ -281,6 +281,7 @@ def add_bus(request):
 def edit_bus(request, bus_unit_num):
     bus = get_object_or_404(Bus, pk=bus_unit_num)
     if request.method == 'POST':
+        # Pass the hidden field's value to retain the bus_unit_num
         form = BusForm(request.POST, instance=bus, edit_mode=True)
         if form.is_valid():
             form.save()
@@ -296,6 +297,24 @@ def edit_bus(request, bus_unit_num):
         'edit_mode': True,
         'bus': bus
     })
+# def edit_bus(request, bus_unit_num):
+#     bus = get_object_or_404(Bus, pk=bus_unit_num)
+#     if request.method == 'POST':
+#         form = BusForm(request.POST, instance=bus, edit_mode=True)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Bus details updated successfully!")
+#             return redirect('it:bus')
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = BusForm(instance=bus, edit_mode=True)
+
+#     return render(request, 'IT/Bus/edit_bus.html', {
+#         'form': form,
+#         'edit_mode': True,
+#         'bus': bus
+#     })
 
 
 #@login_required

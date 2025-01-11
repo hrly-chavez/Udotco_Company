@@ -55,24 +55,32 @@
                 </td>
                 <td>
                     {% if job.j_o_status == 'Pending' %}
-                        <select id="mechanic-select-{{ job.j_o_number }}" class="form-select">
-                            <option value="" disabled selected>Assign a Mechanic</option>
-                            {% for employee in employees %}
-                            <option value="{{ employee.emp_id }}" {% if job.j_o_checked_by == employee %}selected{% endif %}>
-                                {{ employee.emp_fname }} {{ employee.emp_lname }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <!-- Dropdown to assign a mechanic -->
+                        <form method="POST" action="{% url 'mechanic:assign_mechanic' job.j_o_number %}">
+                            {% csrf_token %}
+                            <select id="mechanic-select-{{ job.j_o_number }}" name="j_o_checked_by" class="form-select" onchange="this.form.submit()">
+                                <option value="" disabled selected>Assign a Mechanic</option>
+                                {% for employee in employees %}
+                                <option value="{{ employee.emp_id }}" 
+                                        {% if job.j_o_checked_by and job.j_o_checked_by.emp_id == employee.emp_id %}selected{% endif %}>
+                                    {{ employee.emp_fname }} {{ employee.emp_lname }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
                     {% else %}
+                        <!-- Display the assigned mechanic -->
                         <span id="assigned-mechanic-{{ job.j_o_number }}">
                             {% if job.j_o_checked_by %}
                                 {{ job.j_o_checked_by.emp_fname }} {{ job.j_o_checked_by.emp_lname }}
                             {% else %}
                                 Not Assigned
-                            {% endif %} 
+                            {% endif %}
                         </span>
                     {% endif %}
                 </td>
+                
+                
                 <td>
                     {% if job.j_o_status == 'Done' %}
                         {{ job.j_o_date_completed|date:"M d, Y" }}
@@ -81,12 +89,11 @@
                     {% endif %}
                 </td>
                 <td>
-<a href="{% url 'mechanic:create_item_req' job.j_o_number %}?mechanic_id={{ job.j_o_checked_by.emp_id }}" 
-   class="btn btn-primary btn-sm {% if job.j_o_status in statuses_to_disable %}disabled{% endif %}" 
-   style="padding: 5px 10px; text-decoration: none; color: white; background-color: {% if job.j_o_status in statuses_to_disable %}#cccccc{% else %}#007BFF{% endif %}; border: none; border-radius: 5px;">
-    Create Request
-</a>
-
+                    <a href="{% url 'mechanic:create_item_req' job.j_o_number %}?mechanic_id={% if job.j_o_checked_by %}{{ job.j_o_checked_by.emp_id }}{% else %}{% endif %}" 
+                       class="btn btn-primary btn-sm {% if job.j_o_status in statuses_to_disable %}disabled{% endif %}" 
+                       style="padding: 5px 10px; text-decoration: none; color: white; background-color: {% if job.j_o_status in statuses_to_disable %}#cccccc{% else %}#007BFF{% endif %}; border: none; border-radius: 5px;">
+                       Create Request
+                    </a>
                 </td>
 
             </tr>
@@ -101,43 +108,42 @@
 </div>
 
 <script>
-function updateStatus(jobOrderId, nextStatus) {
-    const mechanicSelect = document.getElementById(mechanic-select-${jobOrderId});
-    const assignedMechanic = mechanicSelect ? mechanicSelect.value : null;
-
-    // Mechanic assignment validation
-    if (nextStatus === "Ongoing" && (!mechanicSelect || !assignedMechanic)) {
-        alert("Please assign a mechanic before moving the job order to 'Ongoing'.");
-        return;
-    }
-
-    fetch("{% url 'mechanic:update_job_status' %}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-            job_order_id: jobOrderId,
-            next_status: nextStatus,
-            assigned_mechanic: assignedMechanic
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-
-            // Reload the page to reflect updated data
-            window.location.reload();
-        } else {
-            alert("Error: " + data.error);
+    function updateStatus(jobOrderId, nextStatus) {
+        const mechanicSelect = document.getElementById(`mechanic-select-${jobOrderId}`);
+        const assignedMechanic = mechanicSelect ? mechanicSelect.value : null;
+    
+        // Mechanic assignment validation
+        if (nextStatus === "Ongoing" && (!mechanicSelect || !assignedMechanic)) {
+            alert("Please assign a mechanic before moving the job order to 'Ongoing'.");
+            return;
         }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("An unexpected error occurred.");
-    });
-}
+    
+        fetch("{% url 'mechanic:update_job_status' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify({
+                job_order_id: jobOrderId,
+                next_status: nextStatus,
+                assigned_mechanic: assignedMechanic,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload(); // Reload to reflect changes
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An unexpected error occurred.");
+        });
+    }
+    
 </script>
 {% endblock %}

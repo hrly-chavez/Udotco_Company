@@ -27,8 +27,8 @@ urlpatterns = [
 #___________________________bus____________________________________________
     path('bus/', views.bus, name='bus'), 
     path('add_bus/', views.add_bus, name='add_bus'),
-    path('edit_bus/<int:bus_unit_num>/', views.edit_bus, name='edit_bus'),
-    path('delete_bus/<int:bus_unit_num>/', views.delete_bus, name='delete_bus'),
+    path('edit_bus/<str:bus_unit_num>/', views.edit_bus, name='edit_bus'),
+    path('delete_bus/<str:bus_unit_num>/', views.delete_bus, name='delete_bus'),
 
 #_____________________________joborder______________________________________
     path('JO/', views.JO, name='JO'), 

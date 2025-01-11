@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'Udotco.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'udotco',
+        'NAME': 'Udotco2',
         'USER': 'postgres',
         'PASSWORD': '123456',
         'HOST': 'localhost',
