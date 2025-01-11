@@ -2,12 +2,11 @@ from django import forms
 
 from shared.models import *
 
-
 # Form for Item Request details
 class ItemRequestForm(forms.ModelForm):
     class Meta:
         model = Item_Request
-        fields = [
+        fields = [ 
             'item_req_approved_by',
             'item_req_date_requested',
             'item_req_description',
@@ -43,9 +42,6 @@ class ItemRequestForm(forms.ModelForm):
 
             # Ensure that the queryset for bus_unit_num only includes the bus associated with the job_order
             self.fields['bus_unit_num'].queryset = Bus.objects.filter(bus_unit_num=job_order.j_o_bus_unit_num.bus_unit_num)
-
-        # Limit the 'Approved By' dropdown to only employees who have roles related to approval
-        self.fields['item_req_approved_by'].queryset = Employee.objects.filter(emp_role__icontains='Manager')
 
         # Optional: Add a fallback to include all employees if no 'Manager' found
         if not self.fields['item_req_approved_by'].queryset.exists():

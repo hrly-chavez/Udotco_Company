@@ -144,8 +144,6 @@ class Material_Requested(models.Model):
     mat_req_qty = models.PositiveIntegerField()
     mat_code = models.ForeignKey('Material', on_delete=models.CASCADE, db_constraint=True)
     item_req_num = models.ForeignKey('Item_Request', on_delete=models.CASCADE, db_constraint=True)
-    
-    # Add a status field to track approval status of each material request
     mat_req_status = models.CharField(max_length=20, choices=[
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
@@ -169,9 +167,11 @@ class Item_Request(models.Model):
     item_req_status =  models.CharField(max_length=10, choices = IR_STAT_CHOICES, default='Waiting')
     bus_unit_num = models.ForeignKey(Bus, on_delete=models.CASCADE, db_constraint=True)
     mat_req_id = models.ForeignKey(Material_Requested,on_delete=models.SET_NULL,null=True,blank=True)
-    
+    job_order = models.ForeignKey('JobOrder', on_delete=models.SET_NULL, null=True, blank=True, db_constraint=True)
     def __str__(self):
-        return f"{self.item_req_num} {self.mat_req_id}"
+        job_order_id = self.job_order.j_o_number if self.job_order else 'No Job Order'
+        return f"{self.item_req_num} - Job Order: {job_order_id}"
+
     def update_status(self):
         material_requests = self.material_requested_set.all()  # Fetch related materials
 
@@ -232,4 +232,3 @@ class Accounts(models.Model):
 
     def __str__(self):  
         return f"Username: {self.username}, User ID: {self.user_id}"
-    

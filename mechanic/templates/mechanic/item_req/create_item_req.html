@@ -1,6 +1,6 @@
-{% extends 'mechanic/index.html' %}
+{% extends 'mechanic/index.html' %} 
 
-{% block content %}
+{% block content %} 
 <div class="container mt-4">
     <h1>Request Materials for Job Order: {{ job_order.j_o_number }}</h1>
 
@@ -39,6 +39,7 @@
 
 
         <input type="hidden" id="date_requested" name="item_req_date_requested">
+        <input type="hidden" id="mat_quantity" name="mat_quantity">
 
         <hr>
         <h3>Select Materials</h3>
@@ -84,7 +85,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
 <script>
-  $('#material-select').select2({
+$('#material-select').select2({
     ajax: {
         url: "{% url 'mechanic:fetch_materials' %}",
         dataType: 'json',
@@ -101,6 +102,31 @@
     allowClear: true
 });
 
+$('#material-select').on('change', function () {
+    const materialId = $(this).val();
+
+    if (materialId) {
+        $.ajax({
+            url: "{% url 'mechanic:fetch_materials' %}",
+            data: { material_id: materialId },
+            success: function (data) {
+                $('#mat-max-request').val(data.mat_max_request);
+                $('#mat-max-request-hidden').val(data.mat_max_request); // Hidden field for validation
+                $('#mat_quantity').val(data.mat_qty_available); // Set available stock
+            },
+            error: function () {
+                alert("Failed to fetch material details.");
+            }
+        });
+    } else {
+        $('#mat-max-request').val('');
+        $('#mat-max-request-hidden').val('');
+        $('#mat_quantity').val('');
+    }
+});
+
+
+
 document.getElementById('date_requested').value = new Date().toISOString().split('T')[0];
 
 let materialsArray = []; // To store added materials
@@ -108,28 +134,36 @@ let materialsArray = []; // To store added materials
 $('#add-material').click(function () {
     const materialId = $('#material-select').val();
     const materialText = $('#material-select option:selected').text();
-    const quantity = parseInt($('#quantity').val(), 10); // Parse as an integer
+    const quantity = parseInt($('#quantity').val(), 10);
+    const maxRequestable = parseInt($('#mat-max-request-hidden').val(), 10); // Hidden field for max request
+    const availableQuantity = parseInt($('#mat_quantity').val(), 10); // Hidden field for available quantity
 
-    // Validate material and quantity
     if (!materialId || quantity <= 0 || isNaN(quantity)) {
         alert("Please select a material and enter a valid quantity.");
         return;
     }
 
-    // Check for duplicates
+    if (quantity > availableQuantity) {
+        alert(`Requested quantity exceeds available stock (${availableQuantity}).`);
+        return;
+    }
+
+    if (quantity > maxRequestable) {
+        alert(`Requested quantity exceeds maximum requestable limit (${maxRequestable}).`);
+        return;
+    }
+
     const existingMaterial = materialsArray.find(material => material.material_id === materialId);
     if (existingMaterial) {
         alert("This material is already added. Please update the quantity if needed.");
         return;
     }
 
-    // Add to materials array
     materialsArray.push({
         material_id: materialId,
         quantity: quantity
     });
 
-    // Add row to the table
     const row = `
         <tr data-id="${materialId}">
             <td>${materialText}</td>
@@ -141,11 +175,9 @@ $('#add-material').click(function () {
     `;
     $('#materials-table').append(row);
 
-    // Reset inputs
     $('#material-select').val(null).trigger('change');
     $('#quantity').val('');
 
-    // Update the hidden input field
     $('#materials-data').val(JSON.stringify(materialsArray));
 });
 
@@ -173,4 +205,3 @@ $('form').submit(function (event) {
 </script>
 
 {% endblock %}
-
