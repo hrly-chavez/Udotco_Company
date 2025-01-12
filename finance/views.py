@@ -10,41 +10,65 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import JsonResponse
 from django.db import transaction
-import json
-
-
 def finance(request):
     return render(request, 'finance/base.html')
 #___________________________________________MATERIALS____________________________________________________
 
-def materials(request):
-    search_query = request.GET.get('search', '')  # Get the search query from the URL
-    category_query = request.GET.get('category', '')  # Get the category filter from the URL
+# def materials(request):
+#     search_query = request.GET.get('search', '')  # Get the search query from the URL
+#     category_query = request.GET.get('category', '')  # Get the category filter from the URL
 
-    # Filter materials by search and/or category
+#     # Filter materials by search and/or category
+#     materials = Material.objects.all()
+
+#     # Apply search filter
+#     if search_query:
+#         materials = materials.filter(
+#             models.Q(mat_name__icontains=search_query) |  
+#             models.Q(mat_brand__icontains=search_query) |
+#             models.Q(mat_category__mat_name__icontains=search_query)
+#         )
+
+#     # Apply category filter
+#     if category_query:
+#         materials = materials.filter(mat_category__mat_name__icontains=category_query)
+
+#     # Sort materials by 'updated_at' in descending order
+#     materials = materials.order_by('-updated_at')  # Show recently updated materials at the top
+
+#     # Fetch all categories for the dropdown filter
+#     categories = Material_Category.objects.all()
+
+#     return render(
+#         request,
+#         'finance/material/materials.html',{'materials': materials,'categories': categories,'selected_category': category_query,},
+#     )
+def materials(request):
+    # Get the search query from the URL
+    search_query = request.GET.get('search', '').strip()  # Remove extra spaces
+
+    # Fetch all materials
     materials = Material.objects.all()
 
-    # Apply search filter
+    # Apply the search filter across multiple fields, including category
     if search_query:
         materials = materials.filter(
-            models.Q(mat_name__icontains=search_query) |  
-            models.Q(mat_brand__icontains=search_query) |
-            models.Q(mat_category__mat_name__icontains=search_query)
+            models.Q(mat_name__icontains=search_query) |  # Search material name
+            models.Q(mat_brand__icontains=search_query) |  # Search brand
+            models.Q(mat_category__mat_name__icontains=search_query) |  # Search category name
+            models.Q(mat_measurement__icontains=search_query) |  # Search measurement
+            models.Q(mat_quantity__icontains=search_query) |  # Search quantity
+            models.Q(mat_max_request__icontains=search_query)  # Search max request
         )
 
-    # Apply category filter
-    if category_query:
-        materials = materials.filter(mat_category__mat_name__icontains=category_query)
-
     # Sort materials by 'updated_at' in descending order
-    materials = materials.order_by('-updated_at')  # Show recently updated materials at the top
+    materials = materials.order_by('-updated_at')
 
-    # Fetch all categories for the dropdown filter
+    # Fetch all categories for displaying in the template if needed
     categories = Material_Category.objects.all()
 
     return render(
-        request,
-        'finance/material/materials.html',{'materials': materials,'categories': categories,'selected_category': category_query,},
+        request,'finance/material/materials.html',{'materials': materials,'categories': categories,'search_query': search_query,}
     )
 
 def add_material(request):
@@ -102,18 +126,19 @@ def edit_material(request, mat_code):
     return render(request, 'finance/material/edit_material.html', {'form': form})
 
 #____________________________________MECHANIC_____________________________________________________________
+
 def mechanic_req(request):
-    # Retrieve all material requests but exclude only approved ones
+    # Retrieve all material requests but exclude approved ones
     item_requests = Material_Requested.objects.select_related(
         'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by'
-    ).exclude(mat_req_status='Approved')  # Exclude approved materials only
+    ).exclude(item_req_num__item_req_status='Approved')  # Exclude approved items
 
-    # Fetch all categories for the dropdown (optional, if needed)
+    # Fetch all categories for the dropdown (optional, if you still want to display category options)
     categories = Material_Category.objects.all()
 
     context = {
         'item_requests': item_requests,
-        'categories': categories,
+        'categories': categories,  # Remove this if you no longer need categories
     }
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
@@ -124,22 +149,23 @@ def approve_material(request, mat_req_id):
             # Fetch material request
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Check if the material is already approved
-            if material_request.mat_req_status == 'Approved':
-                return JsonResponse({'success': False, 'error': 'Material already approved'})
+            # Check if the item has already been approved
+            if material_request.item_req_num.item_req_status == 'Approved':
+                return JsonResponse({'success': False, 'error': 'Item has already been approved'})
 
             # Use a transaction to ensure atomicity
             with transaction.atomic():
-                # Update only the material request status
-                material_request.mat_req_status = 'Approved'
-                material_request.save()
+                # Update the item request status
+                item_request = material_request.item_req_num
+                item_request.item_req_status = 'Approved'
+                item_request.save()
 
                 # Create a new Material_Approved entry
                 Material_Approved.objects.create(
                     mat_req_id=material_request,
-                    ir_num=material_request.item_req_num,
-                    mat_approved_qty=material_request.mat_req_qty,
-                    mat_approved_code=material_request.mat_code,
+                    ir_num=item_request,
+                    mat_approved_qty=material_request.mat_req_qty,  # Approved quantity
+                    mat_approved_code=material_request.mat_code,    # Approved material
                 )
 
             return JsonResponse({'success': True})
@@ -330,116 +356,22 @@ def delete_purchase_order(request, po_num):
     return redirect('finance:purchase_odr')
 
 #____________________________________AR_____________________________________________________________
-
 def ack_rep(request):
-    receipts = Acknowledgment_Receipt.objects.prefetch_related(
-        'material_approved_set' 
-    )
-    return render(request, 'finance/ack_rep/ack_rep.html', {'receipts': receipts})
-
-
-
-# def create_ack_rep(request):
-#     if request.method == 'POST':
-#         form = AcknowledgmentReceiptForm(request.POST)
-
-#         if form.is_valid():
-#             try:
-#                 with transaction.atomic():  # Use atomic transaction for rollback support
-#                     # Save acknowledgment receipt
-#                     acknowledgment_receipt = form.save()
-
-#                     # Process and validate selected materials
-#                     selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
-#                     for material_data in selected_materials:
-#                         material_approved = Material_Approved.objects.get(pk=material_data['id'])
-#                         material = material_approved.mat_approved_code  # Get linked Material object
-
-#                         # Check if enough quantity is available in inventory
-#                         if material.mat_quantity < material_approved.mat_approved_qty:
-#                             raise ValueError(f"Not enough stock for {material.mat_name}. Available: {material.mat_quantity}, Required: {material_approved.mat_approved_qty}")
-
-#                         # Deduct the approved quantity from inventory
-#                         material.mat_quantity -= material_approved.mat_approved_qty
-#                         material.save()
-
-#                         # Link material to acknowledgment receipt
-#                         material_approved.ar_num = acknowledgment_receipt
-#                         material_approved.save()
-
-#                     # Redirect on success
-#                     messages.success(request, "Acknowledgment receipt created successfully!")
-#                     return redirect('finance:ack_rep')
-
-#             except ValueError as e:
-#                 # Handle stock errors and rollback changes
-#                 messages.error(request, str(e))  # Show error message
-#                 transaction.rollback()  # Explicitly rollback if needed
-
-#             except Exception as e:
-#                 # Catch any other unexpected errors
-#                 messages.error(request, f"An error occurred: {e}")
-#                 transaction.rollback()
-
-#         else:
-#             messages.error(request, "Invalid form data. Please check the inputs.")
-
-#     else:
-#         form = AcknowledgmentReceiptForm()
-
-#     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
+    return render(request, 'finance/ack_rep/ack_rep.html')
 
 def create_ack_rep(request):
     if request.method == 'POST':
         form = AcknowledgmentReceiptForm(request.POST)
-
         if form.is_valid():
-            try:
-                with transaction.atomic():
-                    # Save acknowledgment receipt
-                    acknowledgment_receipt = form.save()
-
-                    # Process and validate selected materials
-                    selected_materials = json.loads(request.POST.get('selected_materials', '[]'))
-                    for material_data in selected_materials:
-                        material_approved = Material_Approved.objects.get(pk=material_data['id'])
-                        material = material_approved.mat_approved_code  # Get linked Material object
-
-                        # Check if enough quantity is available in inventory
-                        if material.mat_quantity < material_approved.mat_approved_qty:
-                            raise ValueError(f"Not enough stock for {material.mat_name}. Available: {material.mat_quantity}, Required: {material_approved.mat_approved_qty}")
-
-                        # Deduct the approved quantity from inventory
-                        material.mat_quantity -= material_approved.mat_approved_qty
-                        material.save()
-
-                        # Link material to acknowledgment receipt
-                        material_approved.ar_num = acknowledgment_receipt
-                        material_approved.save()
-
-                    # Redirect on success
-                    messages.success(request, "Acknowledgment receipt created successfully!")
-                    return redirect('finance:ack_rep')
-
-            except ValueError as e:
-                messages.error(request, str(e))
-                transaction.rollback()
-
-            except Exception as e:
-                messages.error(request, f"An error occurred: {e}")
-                transaction.rollback()
-
-        else:
-            messages.error(request, "Invalid form data. Please check the inputs.")
-
+            form.save()
+            return redirect('ack_rep_list')  
     else:
         form = AcknowledgmentReceiptForm()
 
-        # Filter materials to exclude those already linked to an acknowledgment receipt
-        available_materials = Material_Approved.objects.filter(ar_num__isnull=True)  # Exclude materials with an acknowledgment receipt
-        form.fields['item_approved_id'].queryset = available_materials
-
     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
+
+
+
 
 
 def logout_view(request):

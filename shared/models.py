@@ -128,7 +128,7 @@ class JobOrder(models.Model):
     ]
     j_o_number = models.AutoField(primary_key=True)
     j_o_date_requested = models.DateField(default=now)
-    j_o_work_description = models.TextField(null=True,blank=True)
+    j_o_work_description = models.TextField()
     j_o_date_completed = models.DateField(null=True, blank=True)
     j_o_checked_by = models.ForeignKey(Employee, related_name='checked_by', on_delete=models.SET_NULL, null=True, blank=True)
     j_o_approved_by = models.ForeignKey(Employee, related_name='approved_by', on_delete=models.SET_NULL, null=True, blank=True)

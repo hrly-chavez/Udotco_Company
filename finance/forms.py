@@ -27,10 +27,6 @@ class MaterialForm(forms.ModelForm):
         if mat_quantity <= 0:
             raise ValidationError("* The quantity you entered is invalid. Please input a value of 1 or higher.")
         return mat_quantity
-    
-    
-
-
 
 class MaterialOrderForm(forms.ModelForm):
     class Meta:
@@ -63,8 +59,6 @@ class MaterialOrderForm(forms.ModelForm):
 
         return quantity
 
-
-
 class PurchaseOrderForm(forms.ModelForm):
     class Meta:
         model = Purchase_Order
@@ -86,7 +80,6 @@ class PurchaseOrderForm(forms.ModelForm):
 
 class DateFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
-
 
 class MaterialRequestApprovalForm(forms.ModelForm):
     class Meta:
