@@ -297,14 +297,14 @@ def create_item_req(request, job_order_id):
 
                     material_instance = get_object_or_404(Material, pk=material_id)
 
-                    if quantity > material_instance.mat_quantity:
-                        raise ValidationError(
-                            f"Requested quantity for {material_instance.mat_name} exceeds available stock ({material_instance.mat_quantity})."
-                        )
-                    if quantity > material_instance.mat_max_request:
-                        raise ValidationError(
-                            f"Requested quantity for {material_instance.mat_name} exceeds maximum requestable limit ({material_instance.mat_max_request})."
-                        )
+                    # if quantity > material_instance.mat_quantity:
+                    #     raise ValidationError(
+                    #         f"Requested quantity for {material_instance.mat_name} exceeds available stock ({material_instance.mat_quantity})."
+                    #     )
+                    # if quantity > material_instance.mat_max_request:
+                    #     raise ValidationError(
+                    #         f"Requested quantity for {material_instance.mat_name} exceeds maximum requestable limit ({material_instance.mat_max_request})."
+                    #     )
 
                 # Save item request
                 form.instance.item_req_date_requested = timezone.now()
