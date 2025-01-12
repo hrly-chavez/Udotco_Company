@@ -87,6 +87,7 @@ function approveMaterial(matReqId) {
         });
     }
 }
+
 function denyMaterial(matReqId) {
     if (confirm("Are you sure you want to deny this item?")) {
         const url = "{% url 'finance:deny_material' 0 %}".replace('/0/', `/${matReqId}/`);
@@ -115,6 +116,7 @@ function denyMaterial(matReqId) {
         });
     }
 }
+
 </script>
 
 {% endblock %}

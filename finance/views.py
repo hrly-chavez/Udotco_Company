@@ -13,6 +13,8 @@ from django.db import transaction
 import json
 from django.views.decorators.csrf import csrf_exempt
 
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 def finance(request):
@@ -120,7 +122,6 @@ def mechanic_req(request):
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
 
-@csrf_exempt
 def approve_material(request, mat_req_id):
     if request.method == "POST":
         try:
