@@ -4,26 +4,16 @@
 <div style="background-color: #294FA2; height: 110px; width: 100%; display: flex; justify-content: flex-start; align-items: center; border-top-left-radius: 7px; border-top-right-radius: 7px; position: relative;">
     <h1 style="color: white; margin-left: 20px; font-family: 'Istok Web', sans-serif;">AUTO PARTS ITEM REQUEST</h1>
     <div style="display: flex; position: absolute; bottom: 10px; right: 20px;">
-        <!-- Search bar -->
         <form method="GET" action="{% url 'mechanic:view_req' %}">
+            <label for="start_date" style="color: white; margin-right: 10px;">Requested Date:</label>
             <input 
-                type="text" 
-                name="search" 
-                placeholder="Search..." 
-                style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; width: 250px; height: 40px;" 
-                value="{{ search_query }}"
+                type="date" 
+                name="item_req_date_requested" 
+                id="item_req_date_requested" 
+                value="{{ item_req_date_requested|date:'Y-m-d' }}" 
+                style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; height: 40px;"
             >
             
-            <!-- Category filter dropdown -->
-            <select name="category" style="padding: 8px; border-radius: 7px; border: 1px solid #ccc; height: 40px; margin-left: 10px;">
-                <option value="">All Categories</option>
-                {% for category in categories %}
-                    <option value="{{ category.mat_category_id }}" {% if category.mat_category_id|stringformat:"s" == selected_category %}selected{% endif %}>
-                        {{ category.mat_name }}
-                    </option>
-                {% endfor %}
-            </select>
-
             <button type="submit" style="padding: 8px 15px; border-radius: 7px; background-color: #4CAF50; color: white; border: none; height: 40px; margin-left: 10px;">
                 Filter
             </button>
@@ -31,43 +21,102 @@
     </div>
 </div>
 
-<!-- Table for materials -->
+
 <div style="background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
     <table style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead>
-            <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
-                <th>Item Req No.</th>
-                <th>Bus Unit No.</th>
-                <th>Approved By</th>
-                <th>Description</th>
-                <th>Material Name</th>
-                <th>Quantity</th>
-                <th>Brand</th>
-                <th>Measurements</th>
-                <th>Category</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in item_requests %}
-            <tr style="font-family: 'Istok Web', sans-serif; font-size: 18px;">
-                <td>{{ item.item_req_num }}</td>
-                <td>{{ item.bus_unit_num }}</td>
-                <td>{{ item.item_req_approved_by }}</td>
-                <td>{{ item.item_req_description }}</td>
-                <td>{{ item.mat_req_id.mat_code.mat_name }}</td>
-                <td>{{ item.mat_req_id.mat_req_qty }}</td>
-                <td>{{ item.mat_req_id.mat_code.mat_brand }}</td>
-                <td>{{ item.mat_req_id.mat_code.mat_measurement }}</td>
-                <td>{{ item.mat_req_id.mat_code.mat_category.mat_name }}</td>
-                <td>{{ item.irstat_id.IR_STAT_STATUS }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="9" style="text-align: center;">No Auto Parts Item Requests Available</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+    <tr style="border-left: 1px solid #000; border-right: 1px solid #000; border-top: 2px solid #000; border-bottom: 1px solid #000; font-family: 'Alice', regular; font-size: 20px;">
+        <th>Item Req No.</th>
+        <th>Bus Unit No.</th>
+        <th>J.O No.</th>
+        <th>Approved By</th>
+        <th>Description</th>
+        <th>Date Requested</th>
+        <th>Status</th>
+        <th>View</th>
+        <th>Assign J.O</th>
+    </tr>
+</thead>
+<tbody>
+    {% for item_req_num, data in grouped_requests.items %}
+    <tr>
+        <td>{{ item_req_num }}</td>
+        <td>{{ data.details.item_req_num.bus_unit_num.bus_unit_num }}</td>
+        <td>
+                {% if data.details.item_req_num.job_order %}
+                    {{ data.details.item_req_num.job_order.j_o_number }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+        <td>{{ data.details.item_req_num.item_req_approved_by.emp_fname }} {{ data.details.item_req_num.item_req_approved_by.emp_lname }}</td>
+        <td>{{ data.details.item_req_num.item_req_description }}</td>
+        <td>{{ data.details.item_req_num.item_req_date_requested|date:"M d, Y" }}</td>
+        <td>{{ data.details.item_req_num.item_req_status }}</td>
+        <td>
+            <button type="button" class="btn btn-success me-1" data-bs-toggle="modal" data-bs-target="#myModal{{ item_req_num }}">
+                View
+            </button>
+        </td>
+        <td>
+            <a href="{% url 'mechanic:assign_mat_used' item_req_num=item_req_num %}" 
+            class="btn btn-primary btn-sm" 
+            {% if data.details.item_req_num.mat_req_status == 'Approved' %} 
+                disabled 
+            {% endif %}>
+            Mat Used
+            </a>
+        </td>
+
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6" style="text-align: center;">No Auto Parts Item Requests Available</td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+
     </table>
 </div>
+
+<!-- Modals -->
+{% for item_req_num, data in grouped_requests.items %}
+<div class="modal fade" id="myModal{{ item_req_num }}" tabindex="-1" aria-labelledby="myModalLabel{{ item_req_num }}" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel{{ item_req_num }}">Item Request: {{ item_req_num }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Job Order ID:</strong> 
+                    {% if data.details.item_req_num.job_order %}
+                        {{ data.details.item_req_num.job_order.j_o_number }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <ul class="list-unstyled">
+                    {% for item in data.items %}
+                    <li><strong>Material Req ID:</strong> {{ item.mat_req_id }}</li>
+                    <li><strong>Material Name:</strong> {{ item.mat_code.mat_name }}</li>
+                    <li><strong>Brand:</strong> {{ item.mat_code.mat_brand }}</li>
+                    <li><strong>Quantity:</strong> {{ item.mat_req_qty }}</li>
+                    <li><strong>Measurements:</strong> {{ item.mat_code.mat_measurement }}</li>
+                    <li><strong>Category:</strong> {{ item.mat_code.mat_category.mat_name }}</li>
+                    <li><strong>Status:</strong> {{ item.mat_req_status }}</li>
+                    <hr>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div> 
+{% endfor %}
+
+
 {% endblock %}

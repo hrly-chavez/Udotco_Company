@@ -139,6 +139,16 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateInput = document.getElementById('id_emp_date_of_birth');
+    
+            if (dateInput) {
+                const today = new Date();
+                const formattedDate = today.toISOString().split('T')[0];
+                dateInput.setAttribute('max', formattedDate); // Set the max date to today
+            }
+        });
+    
         function setDefaultDate(element) {
             if (!element.value) {
                 const today = new Date();
@@ -148,4 +158,5 @@
             }
         }
     </script>
+    
 {% endblock %}

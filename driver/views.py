@@ -49,3 +49,7 @@ def logout_view(request):
     logout(request)
     request.session.flush()  # Extra precaution to clear all session data
     return redirect('login:login')  # Redirect to login page
+
+
+def minus(request):
+    pass

@@ -154,6 +154,35 @@ class Material_Requested(models.Model):
         return f"{self.item_req_num} {self.mat_req_qty}"
 
 
+# class Item_Request(models.Model):
+#     IR_STAT_CHOICES = [
+#         ('Waiting', 'Waiting'),
+#         ('Ongoing', 'Ongoing'),
+#         ('Done', 'Done'),
+#     ]
+#     item_req_num = models.AutoField(primary_key=True)
+#     item_req_approved_by = models.ForeignKey('Employee', on_delete=models.CASCADE, db_constraint=True)
+#     item_req_date_requested = models.DateField(default=now)
+#     item_req_description = models.TextField(null=True, blank=True)
+#     item_req_status =  models.CharField(max_length=10, choices = IR_STAT_CHOICES, default='Waiting')
+#     bus_unit_num = models.ForeignKey(Bus, on_delete=models.CASCADE, db_constraint=True)
+#     mat_req_id = models.ForeignKey(Material_Requested,on_delete=models.SET_NULL,null=True,blank=True)
+#     job_order = models.ForeignKey('JobOrder', on_delete=models.SET_NULL, null=True, blank=True, db_constraint=True)
+#     def __str__(self):
+#         job_order_id = self.job_order.j_o_number if self.job_order else 'No Job Order'
+#         return f"{self.item_req_num} - Job Order: {job_order_id}"
+
+#     def update_status(self):
+#         material_requests = self.material_requested_set.all()  # Fetch related materials
+
+#         if all(mat.mat_req_status in ['Approved', 'Denied'] for mat in material_requests):
+#             self.item_req_status = 'Done'
+#         elif any(mat.mat_req_status in ['Approved', 'Denied'] for mat in material_requests):
+#             self.item_req_status = 'Ongoing'
+#         else:
+#             self.item_req_status = 'Waiting'
+#         self.save()
+
 class Item_Request(models.Model):
     IR_STAT_CHOICES = [
         ('Waiting', 'Waiting'),
@@ -161,15 +190,18 @@ class Item_Request(models.Model):
         ('Done', 'Done'),
     ]
     item_req_num = models.AutoField(primary_key=True)
-    item_req_approved_by = models.ForeignKey('Employee', on_delete=models.CASCADE, db_constraint=True)
+    item_req_approved_by = models.ForeignKey('Employee', on_delete=models.CASCADE, db_constraint=True, null=True, blank=True)  # Make this field optional
     item_req_date_requested = models.DateField(default=now)
     item_req_description = models.TextField(null=True, blank=True)
-    item_req_status =  models.CharField(max_length=10, choices = IR_STAT_CHOICES, default='Waiting')
+    item_req_status =  models.CharField(max_length=10, choices=IR_STAT_CHOICES, default='Waiting')
     bus_unit_num = models.ForeignKey(Bus, on_delete=models.CASCADE, db_constraint=True)
-    mat_req_id = models.ForeignKey(Material_Requested,on_delete=models.SET_NULL,null=True,blank=True)
-    
+    mat_req_id = models.ForeignKey(Material_Requested, on_delete=models.SET_NULL, null=True, blank=True)
+    job_order = models.ForeignKey('JobOrder', on_delete=models.SET_NULL, null=True, blank=True, db_constraint=True)
+
     def __str__(self):
-        return f"{self.item_req_num} {self.mat_req_id}"
+        job_order_id = self.job_order.j_o_number if self.job_order else 'No Job Order'
+        return f"{self.item_req_num} - Job Order: {job_order_id}"
+
     def update_status(self):
         
         material_requests = self.material_requested_set.all()
@@ -185,6 +217,7 @@ class Item_Request(models.Model):
             self.item_req_status = 'Waiting'  
 
         self.save()
+
 
 class Acknowledgment_Receipt(models.Model):
     status_choices = [ 
@@ -237,4 +270,3 @@ class Accounts(models.Model):
 
     def __str__(self):  
         return f"Username: {self.username}, User ID: {self.user_id}"
-    

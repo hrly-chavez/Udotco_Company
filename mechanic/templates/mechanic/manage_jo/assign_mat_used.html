@@ -1,0 +1,69 @@
+{% extends 'mechanic/index.html' %}
+
+{% block content %}
+<div class="container mt-4">
+
+{% if messages %}
+    <div id="messages">
+        {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
+
+    <h1>Materials Requested for Item Request: {{ item_request.item_req_num }}</h1>
+    <h1>From Job Order: {{ job_order.j_o_number|default:"N/A" }}</h1>
+
+    <hr>
+
+    <h3>Requested Materials</h3>
+    <form method="post" action="{% url 'mechanic:assign_material_to_job_order' item_request.item_req_num %}">
+        {% csrf_token %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Material Name</th>
+                    <th>Brand</th>
+                    <th>Quantity</th>
+                    <th>Measurements</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in materials %}
+                <tr>
+                    <td>{{ material.mat_code.mat_name }}</td>
+                    <td>{{ material.mat_code.mat_brand }}</td>
+                    <td>{{ material.mat_req_qty }}</td>
+                    <td>{{ material.mat_code.mat_measurement }}</td>
+                    <td>{{ material.mat_code.mat_category.mat_name }}</td>
+                    <td>{{ material.mat_req_status }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No materials found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary mt-3">Assign Material</button>
+    </form>
+</div>
+
+<script>
+    // Redirect after a delay when a success message is displayed
+    const messages = document.getElementById('messages');
+    if (messages) {
+        setTimeout(() => {
+            window.location.href = "{% url 'mechanic:joborder_list' %}";  // Redirect to job order list after 3 seconds
+        }, 3000); // Redirect after 3 seconds
+    }
+</script>
+
+
+{% endblock %}
