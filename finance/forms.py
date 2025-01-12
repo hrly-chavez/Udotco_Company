@@ -104,9 +104,9 @@ class PurchaseOrderForm(forms.ModelForm):
             self.fields['po_approved_by'].queryset = Employee.objects.filter(
                 models.Q(dept_id__dept_name='Finance Department') | models.Q(emp_role='Operational Manager')
             )
+
 class DateFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
-
 
 class MaterialRequestApprovalForm(forms.ModelForm):
     class Meta:

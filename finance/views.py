@@ -106,22 +106,41 @@ def edit_material(request, mat_code):
     return render(request, 'finance/material/edit_material.html', {'form': form})
 
 #____________________________________MECHANIC_____________________________________________________________
+# def mechanic_req(request):
+#     # Retrieve all material requests but exclude both approved and denied ones
+#     item_requests = Material_Requested.objects.select_related(
+#         'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by'
+#     ).exclude(mat_req_status__in=['Approved', 'Denied'])  # Exclude both approved and denied materials
+
+#     # Fetch all categories for the dropdown (optional, if needed)
+#     categories = Material_Category.objects.all()
+
+#     context = {
+#         'item_requests': item_requests,
+#         'categories': categories,
+#     }
+
+#     return render(request, 'finance/mechanic/auto_parts_req.html', context)
 def mechanic_req(request):
     # Retrieve all material requests but exclude both approved and denied ones
     item_requests = Material_Requested.objects.select_related(
         'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by'
     ).exclude(mat_req_status__in=['Approved', 'Denied'])  # Exclude both approved and denied materials
 
-    # Fetch all categories for the dropdown (optional, if needed)
-    categories = Material_Category.objects.all()
+    # Retrieve all material orders
+    material_orders = Material_Order.objects.select_related(
+        'mat_category', 'purchase_order'
+    ).all()
 
     context = {
         'item_requests': item_requests,
-        'categories': categories,
+        'material_orders': material_orders,
     }
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
 
+
+@csrf_exempt
 def approve_material(request, mat_req_id):
     if request.method == "POST":
         try:
@@ -131,20 +150,16 @@ def approve_material(request, mat_req_id):
                 return JsonResponse({'success': False, 'error': 'Material already approved'})
 
             with transaction.atomic():
-                # Update status to 'Approved'
                 material_request.mat_req_status = 'Approved'
                 material_request.save()
 
-                # Create a record in Material_Approved
+                # Create record in Material_Approved
                 Material_Approved.objects.create(
                     mat_req_id=material_request,
                     ir_num=material_request.item_req_num,
                     mat_approved_qty=material_request.mat_req_qty,
                     mat_approved_code=material_request.mat_code,
                 )
-
-                # Call a method to update the status of the request
-                material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
@@ -156,20 +171,14 @@ def approve_material(request, mat_req_id):
 def deny_material(request, mat_req_id):
     if request.method == "POST":
         try:
-            # Retrieve the material request or return a 404
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Check if the material is already denied
             if material_request.mat_req_status == 'Denied':
                 return JsonResponse({'success': False, 'error': 'Material already denied'})
 
             with transaction.atomic():
-                # Update status to 'Denied'
                 material_request.mat_req_status = 'Denied'
                 material_request.save()
-
-                # Update the status of the associated item request
-                material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
@@ -379,8 +388,6 @@ def ack_rep(request):
     )
     return render(request, 'finance/ack_rep/ack_rep.html', {'receipts': receipts})
 
-
-
 def create_ack_rep(request):
     if request.method == 'POST':
         form = AcknowledgmentReceiptForm(request.POST)
@@ -432,7 +439,6 @@ def create_ack_rep(request):
         form.fields['item_approved_id'].queryset = available_materials
 
     return render(request, 'finance/ack_rep/create_ack_rep.html', {'form': form})
-
 
 def logout_view(request):
     # Clear the session (log out the user)
