@@ -64,7 +64,9 @@ class MaterialOrderForm(forms.ModelForm):
         # Make fields read-only
         self.fields['mat_odr_brand'].widget.attrs['readonly'] = 'readonly'
         self.fields['mat_odr_measurement'].widget.attrs['readonly'] = 'readonly'
-        self.fields['mat_category'].widget.attrs['disabled'] = 'disabled'  # For Select fields, 'disabled' is typically used for read-only behavior.
+        self.fields['mat_category'].widget.attrs['readonly'] = 'readonly'
+        #self.fields['mat_category'].widget = forms.HiddenInput()
+
 
     # Custom validation for 'mat_odr_qty' (Quantity)
     def clean_mat_odr_qty(self):

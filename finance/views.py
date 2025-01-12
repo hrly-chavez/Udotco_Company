@@ -359,7 +359,6 @@ def edit_purchase_order(request, po_num):
     })
 
 
-
 def delete_purchase_order(request, po_num):
     # Get the purchase order object by PO number
     purchase_order = get_object_or_404(Purchase_Order, po_num=po_num)
