@@ -65,7 +65,7 @@ class MaterialOrderForm(forms.ModelForm):
         self.fields['mat_odr_brand'].widget.attrs['readonly'] = 'readonly'
         self.fields['mat_odr_measurement'].widget.attrs['readonly'] = 'readonly'
         self.fields['mat_category'].widget.attrs['readonly'] = 'readonly'
-        #self.fields['mat_category'].widget = forms.HiddenInput()
+        
 
 
     # Custom validation for 'mat_odr_qty' (Quantity)

@@ -358,17 +358,28 @@ def edit_purchase_order(request, po_num):
         'related_materials': related_materials,  # Pass related materials to the template
     })
 
+# def delete_purchase_order(request, po_num):
+#     # Get the purchase order object by PO number
+#     purchase_order = get_object_or_404(Purchase_Order, po_num=po_num)
 
+#     # Delete the purchase order
+#     purchase_order.delete()
+
+#     # Redirect to the purchase orders list page
+#     return redirect('finance:purchase_odr')
 def delete_purchase_order(request, po_num):
     # Get the purchase order object by PO number
     purchase_order = get_object_or_404(Purchase_Order, po_num=po_num)
+    
+    # Check if the status is "Ongoing"
+    if purchase_order.postat_id.postat_status == "Ongoing":
+        messages.error(request, "Cannot delete a purchase order with 'Ongoing' status.")
+        return redirect('finance:purchase_odr')
 
     # Delete the purchase order
     purchase_order.delete()
-
-    # Redirect to the purchase orders list page
+    messages.success(request, "Purchase order deleted successfully.")
     return redirect('finance:purchase_odr')
-
 #____________________________________AR_____________________________________________________________
 
 def ack_rep(request):
