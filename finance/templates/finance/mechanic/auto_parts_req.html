@@ -35,7 +35,7 @@
                 <td>{{ item.mat_code.mat_brand }}</td>
                 <td>{{ item.mat_code.mat_measurement }}</td>
                 <td>{{ item.mat_code.mat_category.mat_name }}</td>
-                <td>{{ item.item_req_num.item_req_status }}</td>
+                <td>{{ item.mat_req_status }}</td>
                 <td>
                     <!-- Approve Button -->
                     <button onclick="approveMaterial('{{ item.mat_req_id }}')"
@@ -61,7 +61,8 @@
 <script>
 function approveMaterial(matReqId) {
     if (confirm("Are you sure you want to approve this item?")) {
-        fetch(`/finance/approve-material/${matReqId}/`, {
+        const url = "{% url 'finance:approve_material' 0 %}".replace('/0/', `/${matReqId}/`);
+        fetch(url, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -71,26 +72,26 @@ function approveMaterial(matReqId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove the approved row from the table
                 const row = document.getElementById(`row-${matReqId}`);
                 if (row) {
-                    row.remove();  // Remove the row from the table
-                    alert("Material approved successfully!");
+                    row.cells[9].innerText = 'Approved';
+                    row.remove();
                 }
+                alert("Material approved successfully!");
             } else {
                 alert("Failed to approve material: " + (data.error || "Unknown error"));
             }
         })
         .catch(error => {
             alert("An error occurred: " + error.message);
-            console.error("Error:", error);
         });
     }
 }
 
 function denyMaterial(matReqId) {
     if (confirm("Are you sure you want to deny this item?")) {
-        fetch(`/finance/deny-material/${matReqId}/`, {
+        const url = "{% url 'finance:deny_material' 0 %}".replace('/0/', `/${matReqId}/`);
+        fetch(url, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -100,9 +101,11 @@ function denyMaterial(matReqId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove the denied row from the table
                 const row = document.getElementById(`row-${matReqId}`);
-                if (row) row.remove();  // Remove the denied row from the table
+                if (row) {
+                    row.cells[9].innerText = 'Denied'; // Update the status in the table
+                    row.remove(); // Optionally remove the row
+                }
                 alert("Material denied successfully!");
             } else {
                 alert("Failed to deny material: " + (data.error || "Unknown error"));
@@ -110,34 +113,10 @@ function denyMaterial(matReqId) {
         })
         .catch(error => {
             alert("An error occurred: " + error.message);
-            console.error("Error:", error);
         });
     }
 }
+
 </script>
-    <!-- function approveMaterial(matReqId) {
-        if (confirm("Are you sure you want to approve this item?")) {
-            fetch(`/finance/approve-material/${matReqId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const row = document.getElementById(`row-${matReqId}`);
-                    if (row) row.remove();
-                    alert("Material approved successfully!");
-                } else {
-                    alert("Failed to approve material: " + (data.error || "Unknown error"));
-                }
-            })
-            .catch(error => {
-                alert("An error occurred: " + error.message);
-                console.error("Error:", error);
-            });
-        }
-    } -->
+
 {% endblock %}

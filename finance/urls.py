@@ -26,7 +26,8 @@ urlpatterns = [
     path('edit_purchase_order/<int:po_num>/', views.edit_purchase_order, name='edit_purchase_odr'),
     path('purchase_order/delete/<int:po_num>/', views.delete_purchase_order, name='delete_purchase_odr'),
     path('purchase_order/filter/', views.filter_purchase_orders, name='filter_purchase_orders'),
-
+    path('get-material-details/<int:mat_odr_id>/', views.get_material_details, name='get_material_details'),
+    
 #_________________________________________ACKNOWLEDGE RECEIPT_____________________________________________
     path('ack-rep/', views.ack_rep, name='ack_rep'),
     path('create-ack-rep/', views.create_ack_rep, name='create_ack_rep'),

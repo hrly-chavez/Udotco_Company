@@ -13,6 +13,7 @@
             <p><strong>Status:</strong> {{ purchase_order.postat_id.postat_status }}</p>
             <p><strong>Supplier:</strong> {{ purchase_order.sup_id.sup_name }}</p>
             <p><strong>Approved By:</strong> {{ purchase_order.po_approved_by }}</p>
+            
         </div>
 
         <h3>Material Orders</h3>
@@ -22,7 +23,7 @@
                 <p><strong>Quantity:</strong> {{ material.mat_odr_qty }}</p>
                 <p><strong>Brand:</strong> {{ material.mat_odr_brand }}</p>
                 <p><strong>Measurement / Size:</strong> {{ material.mat_odr_measurement }}</p>
-                
+                <p><strong>Category:</strong> {{ material.mat_category.mat_name }}</p> 
                 <hr>
             {% empty %}
                 <p>No materials found for this purchase order.</p>
