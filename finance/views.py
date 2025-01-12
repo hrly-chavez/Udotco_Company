@@ -11,6 +11,8 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.db import transaction
 import json
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 def finance(request):
@@ -103,10 +105,10 @@ def edit_material(request, mat_code):
 
 #____________________________________MECHANIC_____________________________________________________________
 def mechanic_req(request):
-    # Retrieve all material requests but exclude only approved ones
+    # Retrieve all material requests but exclude both approved and denied ones
     item_requests = Material_Requested.objects.select_related(
         'mat_code__mat_category', 'item_req_num__bus_unit_num', 'item_req_num__item_req_approved_by'
-    ).exclude(mat_req_status='Approved')  # Exclude approved materials only
+    ).exclude(mat_req_status__in=['Approved', 'Denied'])  # Exclude both approved and denied materials
 
     # Fetch all categories for the dropdown (optional, if needed)
     categories = Material_Category.objects.all()
@@ -118,23 +120,21 @@ def mechanic_req(request):
 
     return render(request, 'finance/mechanic/auto_parts_req.html', context)
 
+@csrf_exempt
 def approve_material(request, mat_req_id):
     if request.method == "POST":
         try:
-            # Fetch material request
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
-            # Check if already approved
             if material_request.mat_req_status == 'Approved':
                 return JsonResponse({'success': False, 'error': 'Material already approved'})
 
-            # Use a transaction
             with transaction.atomic():
-                # Update status to approved
+                # Update status to 'Approved'
                 material_request.mat_req_status = 'Approved'
                 material_request.save()
 
-                # Create Material_Approved entry
+                # Create a record in Material_Approved
                 Material_Approved.objects.create(
                     mat_req_id=material_request,
                     ir_num=material_request.item_req_num,
@@ -142,36 +142,39 @@ def approve_material(request, mat_req_id):
                     mat_approved_code=material_request.mat_code,
                 )
 
-                # Update item request status dynamically
+                # Call a method to update the status of the request
                 material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
+@csrf_exempt
 def deny_material(request, mat_req_id):
     if request.method == "POST":
         try:
+            # Retrieve the material request or return a 404
             material_request = get_object_or_404(Material_Requested, pk=mat_req_id)
 
+            # Check if the material is already denied
             if material_request.mat_req_status == 'Denied':
                 return JsonResponse({'success': False, 'error': 'Material already denied'})
 
             with transaction.atomic():
+                # Update status to 'Denied'
                 material_request.mat_req_status = 'Denied'
                 material_request.save()
 
-                # Update item request status dynamically
+                # Update the status of the associated item request
                 material_request.item_req_num.update_status()
 
             return JsonResponse({'success': True})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
 #____________________________________PURCHASE ORDER________________________________________________________
 
@@ -236,6 +239,20 @@ def filter_purchase_orders(request):
 
     return render(request, 'finance/purchase_odr/purchase_odr.html', context)
 
+def get_material_details(request, mat_odr_id):
+    if request.method == 'GET':
+        try:
+            material = Material_Order.objects.get(pk=mat_odr_id)  
+            data = {
+                'mat_odr_qty': material.mat_odr_qty,
+                'mat_odr_brand': material.mat_odr_brand,
+                'mat_odr_measurement': material.mat_odr_measurement,
+                'mat_category': material.mat_category_id, 
+            }
+            return JsonResponse(data)
+        except Material_Order.DoesNotExist:
+            return JsonResponse({'error': 'Material not found'}, status=404)
+
 def create_purchase_order(request):
     # Create the formset with the ability to delete
     MaterialOrderFormSet = modelformset_factory(Material_Order, form=MaterialOrderForm, extra=1, can_delete=True)
@@ -291,8 +308,8 @@ def edit_purchase_order(request, po_num):
     # Retrieve related materials
     related_materials = Material_Order.objects.filter(purchase_order=purchase_order)
 
-    # Check if the status is Ongoing or Done
-    is_locked = purchase_order.postat_id.postat_status in ['Ongoing', 'Done']
+    # Get the current status of the purchase order
+    current_status = purchase_order.postat_id.postat_status
 
     if request.method == 'POST':
         # Create form with instance of the purchase order to edit
@@ -308,26 +325,39 @@ def edit_purchase_order(request, po_num):
         # Make the 'po_datemade' field read-only
         form.fields['po_datemade'].widget.attrs['readonly'] = True
 
-        # If the status is Ongoing or Done, disable all fields in the form
-        if is_locked:
+        # Status-specific field restrictions
+        if current_status == 'Ongoing':
+            # If the status is Ongoing, make all fields readonly except 'postat_id'
+            for field in form.fields:
+                if field != 'postat_id':  # Exclude 'postat_id' (status) from being readonly
+                    form.fields[field].widget.attrs['readonly'] = True
+
+        elif current_status == 'Done':
+            # If the status is Done, make all fields readonly, including 'postat_id'
             for field in form.fields:
                 form.fields[field].widget.attrs['readonly'] = True
-                form.fields[field].widget.attrs['disabled'] = 'disabled'
 
-        # Allow editing 'postat_id' if status is 'Waiting'
-        if purchase_order.postat_id.postat_status == 'Waiting':
+        elif current_status == 'Waiting':
+            # If the status is Waiting, all fields are editable, no restrictions
+            for field in form.fields:
+                form.fields[field].widget.attrs['readonly'] = False
+
+        # Allow editing 'postat_id' only if status is 'Waiting' or 'Ongoing'
+        if current_status in ['Waiting', 'Ongoing']:
             form.fields['postat_id'].widget.attrs['disabled'] = False
 
-        # Disable 'postat_id' field if the status is 'Done'
-        if purchase_order.postat_id.postat_status == 'Done':
+        # Disable 'postat_id' if the status is 'Done'
+        if current_status == 'Done':
+            form.fields['postat_id'].widget.attrs['readonly'] = True
             form.fields['postat_id'].widget.attrs['disabled'] = 'disabled'
 
     return render(request, 'finance/purchase_odr/edit_purchase_odr.html', {
         'form': form,
         'purchase_order': purchase_order,
         'related_materials': related_materials,  # Pass related materials to the template
-        'is_locked': is_locked,  # Pass the locked status to the template
     })
+
+
 
 def delete_purchase_order(request, po_num):
     # Get the purchase order object by PO number

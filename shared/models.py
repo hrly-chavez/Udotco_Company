@@ -5,7 +5,7 @@ from django.apps import apps
 
 # Create your models here.
 class Bus(models.Model): 
-    bus_unit_num = models.IntegerField(primary_key=True)
+    bus_unit_num = models.CharField(primary_key=True)
     bus_license_plate_number = models.CharField(max_length=10)
     bus_chassis_num = models.CharField(max_length=10)
     bus_engine_num = models.CharField(max_length=10)
@@ -104,14 +104,14 @@ class Material_Order(models.Model):
     mat_odr_id = models.AutoField(primary_key=True)
     mat_odr_name = models.CharField(max_length=100)
     mat_odr_qty = models.IntegerField()
-    mat_odr_brand = models.CharField(max_length=100, null=True, blank=True)
+    mat_odr_brand = models.CharField(max_length=100, null=True, blank=True,default='Generic')
     mat_odr_measurement = models.CharField(null=True, blank=True)
-    mat_category = models.ForeignKey(Material_Order_Category,on_delete=models.CASCADE, db_constraint=True,null=True,blank=True)
-    purchase_order = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE)
+    mat_category = models.ForeignKey(Material_Category,on_delete=models.CASCADE)
+    purchase_order = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE,null=True,blank=True)
     
     
     def __str__(self):
-        return f"{self.mat_odr_name}, {self.mat_odr_qty}"
+        return f"{self.mat_odr_name}"
 
 class Material_Used(models.Model):
     mat_used_id = models.AutoField(primary_key=True)
@@ -144,8 +144,6 @@ class Material_Requested(models.Model):
     mat_req_qty = models.PositiveIntegerField()
     mat_code = models.ForeignKey('Material', on_delete=models.CASCADE, db_constraint=True)
     item_req_num = models.ForeignKey('Item_Request', on_delete=models.CASCADE, db_constraint=True)
-    
-    # Add a status field to track approval status of each material request
     mat_req_status = models.CharField(max_length=20, choices=[
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
@@ -173,14 +171,19 @@ class Item_Request(models.Model):
     def __str__(self):
         return f"{self.item_req_num} {self.mat_req_id}"
     def update_status(self):
-        material_requests = self.material_requested_set.all()  # Fetch related materials
+        
+        material_requests = self.material_requested_set.all()
 
-        if all(mat.mat_req_status in ['Approved', 'Denied'] for mat in material_requests):
-            self.item_req_status = 'Done'
-        elif any(mat.mat_req_status in ['Approved', 'Denied'] for mat in material_requests):
-            self.item_req_status = 'Ongoing'
+        total = material_requests.count()
+        resolved = material_requests.filter(mat_req_status__in=['Approved', 'Denied']).count()
+
+        if resolved == total and total > 0:
+            self.item_req_status = 'Done'  
+        elif resolved > 0:
+            self.item_req_status = 'Ongoing'  
         else:
-            self.item_req_status = 'Waiting'
+            self.item_req_status = 'Waiting'  
+
         self.save()
 
 class Acknowledgment_Receipt(models.Model):
@@ -208,6 +211,8 @@ class Material_Approved(models.Model):
     is_acknowledged = models.BooleanField(default=False)
     def __str__(self):
         return f"Approved Material: {self.mat_approved_code.mat_name} - {self.mat_approved_qty}"
+    
+
 
 class Accounts(models.Model):
     user_id = models.OneToOneField( 

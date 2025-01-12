@@ -18,7 +18,7 @@
             {{ purchase_order_form.po_datemade }}<br>
             {{ purchase_order_form.sup_id.label_tag }}<br>
             {{ purchase_order_form.sup_id }}<br>
-            {{ purchase_order_form.po_approved_by.label_tag }}<br>
+            {{ purchase_order_form.po_approved_by.label_tag }}<br>  
             {{ purchase_order_form.po_approved_by }}
         </div>
         
@@ -114,6 +114,29 @@
             });
         }
     });
+    document.addEventListener('change', function (event) {
+    if (event.target.classList.contains('form-control') && event.target.name.includes('mat_odr_name')) {
+        const matOdrId = event.target.value;  // This will now hold `mat_odr_id`
+        const formGroup = event.target.closest('.material-order-form');
+        if (matOdrId) {
+            fetch(`/get-material-details/${matOdrId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        formGroup.querySelector('input[name$="mat_odr_qty"]').value = data.mat_odr_qty || '';
+                        formGroup.querySelector('input[name$="mat_odr_brand"]').value = data.mat_odr_brand || '';
+                        formGroup.querySelector('input[name$="mat_odr_measurement"]').value = data.mat_odr_measurement || '';
+                        formGroup.querySelector('select[name$="mat_category"]').value = data.mat_category || '';
+                    } else {
+                        alert('Material details could not be fetched.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching material details:', error);
+                });
+        }
+    }
+});
 </script>
 
 {% endblock %}

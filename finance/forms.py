@@ -29,24 +29,42 @@ class MaterialForm(forms.ModelForm):
         return mat_quantity
     
     
+
 class MaterialOrderForm(forms.ModelForm):
+    mat_odr_name = forms.ModelChoiceField(
+        queryset=Material_Order.objects.none(),  # Initialize with an empty queryset
+        empty_label="Select Material",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="Material",
+    )
+
     class Meta:
         model = Material_Order
-        fields = ['mat_odr_name', 'mat_odr_qty', 'mat_odr_brand', 'mat_odr_measurement']
+        fields = ['mat_odr_name', 'mat_odr_qty', 'mat_odr_brand', 'mat_odr_measurement', 'mat_category']
         labels = {
             'mat_odr_name': 'Item Name',
             'mat_odr_qty': 'Quantity',
             'mat_odr_brand': 'Brand',
             'mat_odr_measurement': 'Measurement / Size',
-            
+            'mat_category': 'Category',
         }
         widgets = {
-            'mat_odr_name': forms.TextInput(attrs={'class': 'form-control'}),
             'mat_odr_qty': forms.NumberInput(attrs={'class': 'form-control'}),
             'mat_odr_brand': forms.TextInput(attrs={'class': 'form-control'}),
             'mat_odr_measurement': forms.TextInput(attrs={'class': 'form-control'}),
-            
+            'mat_category': forms.Select(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Exclude materials that are already associated with a purchase order
+        self.fields['mat_odr_name'].queryset = Material_Order.objects.filter(purchase_order__isnull=True)
+
+        # Make fields read-only
+        self.fields['mat_odr_brand'].widget.attrs['readonly'] = 'readonly'
+        self.fields['mat_odr_measurement'].widget.attrs['readonly'] = 'readonly'
+        self.fields['mat_category'].widget.attrs['disabled'] = 'disabled'  # For Select fields, 'disabled' is typically used for read-only behavior.
 
     # Custom validation for 'mat_odr_qty' (Quantity)
     def clean_mat_odr_qty(self):
@@ -59,6 +77,7 @@ class MaterialOrderForm(forms.ModelForm):
             )
 
         return quantity
+
 
 
 
@@ -80,7 +99,12 @@ class PurchaseOrderForm(forms.ModelForm):
             'sup_id': forms.Select(attrs={'class': 'form-control'}),
             'po_approved_by': forms.Select(attrs={'class': 'form-control'}),
         }
-
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # Filter employees to show only those in the Finance Department or with the role 'Operational Manager'
+            self.fields['po_approved_by'].queryset = Employee.objects.filter(
+                models.Q(dept_id__dept_name='Finance Department') | models.Q(emp_role='Operational Manager')
+            )
 class DateFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
 
