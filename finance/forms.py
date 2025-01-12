@@ -80,9 +80,6 @@ class MaterialOrderForm(forms.ModelForm):
 
         return quantity
 
-
-
-
 class PurchaseOrderForm(forms.ModelForm):
     class Meta:
         model = Purchase_Order 
