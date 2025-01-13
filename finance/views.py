@@ -13,7 +13,7 @@ from django.db import transaction
 import json
 from django.views.decorators.csrf import csrf_exempt
 
-from django.views.decorators.csrf import csrf_exempt
+
 
 
 
@@ -358,15 +358,7 @@ def edit_purchase_order(request, po_num):
         'related_materials': related_materials,  # Pass related materials to the template
     })
 
-# def delete_purchase_order(request, po_num):
-#     # Get the purchase order object by PO number
-#     purchase_order = get_object_or_404(Purchase_Order, po_num=po_num)
 
-#     # Delete the purchase order
-#     purchase_order.delete()
-
-#     # Redirect to the purchase orders list page
-#     return redirect('finance:purchase_odr')
 def delete_purchase_order(request, po_num):
     # Get the purchase order object by PO number
     purchase_order = get_object_or_404(Purchase_Order, po_num=po_num)
