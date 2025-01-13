@@ -66,8 +66,6 @@ class MaterialOrderForm(forms.ModelForm):
         self.fields['mat_odr_measurement'].widget.attrs['readonly'] = 'readonly'
         self.fields['mat_category'].widget.attrs['readonly'] = 'readonly'
         
-
-
     # Custom validation for 'mat_odr_qty' (Quantity)
     def clean_mat_odr_qty(self):
         quantity = self.cleaned_data.get('mat_odr_qty')
