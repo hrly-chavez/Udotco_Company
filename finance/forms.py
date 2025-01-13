@@ -80,12 +80,9 @@ class MaterialOrderForm(forms.ModelForm):
 
         return quantity
 
-
-
-
 class PurchaseOrderForm(forms.ModelForm):
     class Meta:
-        model = Purchase_Order
+        model = Purchase_Order 
         fields = ['po_description', 'po_datemade', 'postat_id', 'sup_id', 'po_approved_by']
         labels = {
             'po_description': 'Description',
@@ -107,9 +104,9 @@ class PurchaseOrderForm(forms.ModelForm):
             self.fields['po_approved_by'].queryset = Employee.objects.filter(
                 models.Q(dept_id__dept_name='Finance Department') | models.Q(emp_role='Operational Manager')
             )
+
 class DateFilterForm(forms.Form):
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
-
 
 class MaterialRequestApprovalForm(forms.ModelForm):
     class Meta:
@@ -140,5 +137,3 @@ class AcknowledgmentReceiptForm(forms.ModelForm):
             mat_req_id__mat_req_status='Approved'  # Ensure this condition matches your approval logic
         ).select_related('mat_approved_code')
         self.fields['item_approved_id'].label_from_instance = lambda obj: f"{obj.mat_approved_code.mat_name} - Quantity: {obj.mat_approved_qty}"
-
-

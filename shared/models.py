@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.timezone import now
 from django.contrib.auth.hashers import make_password
 from django.apps import apps
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # Create your models here.
 class Bus(models.Model): 
@@ -107,8 +109,9 @@ class Material_Order(models.Model):
     mat_odr_brand = models.CharField(max_length=100, null=True, blank=True,default='Generic')
     mat_odr_measurement = models.CharField(null=True, blank=True)
     mat_category = models.ForeignKey(Material_Category,on_delete=models.CASCADE)
+    mat_odr_status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Denied', 'Denied')], default='Pending')
     purchase_order = models.ForeignKey(Purchase_Order, on_delete=models.CASCADE,null=True,blank=True)
-    
+    item_req_num = models.ForeignKey('Item_Request', on_delete=models.SET_NULL, null=True, blank=True, db_constraint=True)
     
     def __str__(self):
         return f"{self.mat_odr_name}"
@@ -128,7 +131,7 @@ class JobOrder(models.Model):
     ]
     j_o_number = models.AutoField(primary_key=True)
     j_o_date_requested = models.DateField(default=now)
-    j_o_work_description = models.TextField(null=True,blank=True)
+    j_o_work_description = models.TextField()
     j_o_date_completed = models.DateField(null=True, blank=True)
     j_o_checked_by = models.ForeignKey(Employee, related_name='checked_by', on_delete=models.SET_NULL, null=True, blank=True)
     j_o_approved_by = models.ForeignKey(Employee, related_name='approved_by', on_delete=models.SET_NULL, null=True, blank=True)
@@ -143,7 +146,7 @@ class Material_Requested(models.Model):
     mat_req_id = models.AutoField(primary_key=True)
     mat_req_qty = models.PositiveIntegerField()
     mat_code = models.ForeignKey('Material', on_delete=models.CASCADE, db_constraint=True)
-    item_req_num = models.ForeignKey('Item_Request', on_delete=models.CASCADE, db_constraint=True)
+    item_req_num = models.ForeignKey('Item_Request', on_delete=models.CASCADE, db_constraint=True,related_name='material_requests')
     mat_req_status = models.CharField(max_length=20, choices=[
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
@@ -152,7 +155,6 @@ class Material_Requested(models.Model):
 
     def __str__(self):
         return f"{self.item_req_num} {self.mat_req_qty}"
-
 
 
 
@@ -170,27 +172,29 @@ class Item_Request(models.Model):
     bus_unit_num = models.ForeignKey(Bus, on_delete=models.CASCADE, db_constraint=True)
     mat_req_id = models.ForeignKey(Material_Requested, on_delete=models.SET_NULL, null=True, blank=True)
     job_order = models.ForeignKey('JobOrder', on_delete=models.SET_NULL, null=True, blank=True, db_constraint=True)
+    mat_odr_id = models.ForeignKey(Material_Order, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=True)
 
-    def __str__(self):
-        job_order_id = self.job_order.j_o_number if self.job_order else 'No Job Order'
-        return f"{self.item_req_num} - Job Order: {job_order_id}"
+    def __str__(self): 
+        return f"{self.item_req_num} - {self.bus_unit_num}"
 
     def update_status(self):
-        
-        material_requests = self.material_requested_set.all()
-
+        material_requests = self.material_requests.all()
         total = material_requests.count()
         resolved = material_requests.filter(mat_req_status__in=['Approved', 'Denied']).count()
 
         if resolved == total and total > 0:
-            self.item_req_status = 'Done'  
+            self.item_req_status = 'Done'
         elif resolved > 0:
-            self.item_req_status = 'Ongoing'  
+            self.item_req_status = 'Ongoing'
         else:
-            self.item_req_status = 'Waiting'  
+            self.item_req_status = 'Waiting'
 
         self.save()
 
+@receiver(post_save, sender=Material_Requested)
+def update_item_request_status(sender, instance, **kwargs):
+    if instance.item_req_num:
+        instance.item_req_num.update_status()
 
 class Acknowledgment_Receipt(models.Model):
     status_choices = [ 
@@ -218,7 +222,6 @@ class Material_Approved(models.Model):
     def __str__(self):
         return f"Approved Material: {self.mat_approved_code.mat_name} - {self.mat_approved_qty}"
     
-
 
 class Accounts(models.Model):
     user_id = models.OneToOneField( 

@@ -61,7 +61,7 @@
     <div class="sidebar">
         <h2 class="text-center">Dashboard</h2><br><br>
         <a href="{% url 'finance:mechanic_req' %}" class="{% if request.resolver_match.url_name == 'finance:mechanic_req' %}active{% endif %}">
-            Item Request
+            Auto Part(s) Request
         </a><br>
         <a href="{% url 'finance:purchase_odr' %}" class="{% if request.resolver_match.url_name == 'finance:purchase_odr' %}active{% endif %}">
             Purchase Order
@@ -70,9 +70,9 @@
             Auto Parts
         </a> <br>
         <a href="{% url 'finance:ack_rep' %}" class="{% if request.resolver_match.url_name == 'finance:ack_rep' %}active{% endif %}">
-            Acknowledgment Report
+            Acknowledgment Receipt
         </a>
-        <a href="{% url 'finance:logout' %}" class="btn btn-danger">
+        <a href="{% url 'finance:logout' %}" class="btn btn-danger"> 
             Logout
         </a>
     </div>

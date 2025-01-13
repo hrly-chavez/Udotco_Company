@@ -123,9 +123,9 @@
         let message = "Cannot delete a purchase order with 'Ongoing' status.";
         
         if (status === "Waiting") {
-            message = "This purchase order is in the 'Waiting' status. Are you sure you want to delete it?";
+            message = "Are you sure you want to delete this purchase order?";
         } else if (status === "Done") {
-            message = "This purchase order is marked as 'Done'. Are you sure you want to delete it?";
+            message = "This purchase order Done. Are you sure you want to delete it?";
         }
 
         return confirm(message);
